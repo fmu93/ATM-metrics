@@ -129,7 +129,7 @@ class TrackInegrator:
             self.integrator_list.append([call, icao, track, 0, epoch])
 
 
-class Performance2():
+class Performance2:
 
     def __init__(self, zones):
         self.zones = zones
@@ -140,7 +140,7 @@ class Performance2():
             if zone is not None:  # Zone class
                 guess_str = zone.guess_class.guess_str
                 if zone.UorD == 'D':
-                    if miss_event in guess_str:
+                    if miss_event in guess_str and 0 < zone.zone < 3:
                         operation_str = guess_str
                     if zone.zone > 0 and operation_str is not None:
                         if guess_str[0:2] == operation_str[0:2] and guess_str != operation_str:
@@ -246,7 +246,7 @@ class Operation:
             self.inclin_list.append(inclin)
             self.gs_list.append(gs)
             self.track_list.append(track)
-            
+
         track = track % 360  # Wrapping [0, 360] just in case
         # operation identified by this parameters
         runway = ''
@@ -263,9 +263,7 @@ class Operation:
                 if UorD == 'D':
                     # normal 18 op
                     pass
-                elif self.get_mean_inclin() > -1.5:
-                # elif UorD == 'U':
-                #     # aborting approach
+                elif inclin > -1 and 0 < zone < 3:
                     event = miss_event
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
@@ -286,9 +284,7 @@ class Operation:
                 if UorD == 'D':
                     # normal 32 op
                     pass
-                elif self.get_mean_inclin() > -1.5:
-                # elif UorD == 'U':
-                #     # aborting approach
+                elif inclin > -1 and 0 < zone < 3:
                     event = miss_event
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
                 runway = '14'
@@ -843,9 +839,9 @@ class Analyzer:
                     FL = float(data[6])
                     alt_uncorrected = FL * 30.48  # m, no QNH correction
                 elif not data[7] == '':  # should be "1"
-                    # TODO include ground positions in analysis. If QNH not properly applied, a higher surface pos will make it think it was a missed apprach
-                    continue
-                    alt_uncorrected = airpot_altitude  # ground position. Will be corrected but doesn't really matter
+                    # # TODO include ground positions in analysis. If QNH not properly applied, a higher surface pos will make it think it was a missed apprach
+                    # continue
+                    alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
                     FL = 20
                 if FL is not None and FL < 130:  # FL130
                     pos = Point(lat, lon)
