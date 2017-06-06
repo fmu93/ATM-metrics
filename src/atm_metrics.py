@@ -236,16 +236,17 @@ class Operation:
                     # a second operation is claiming yet another second operation? Srsly...
                     print '????? ' + self.flight.aircraft.icao + ' ' + self.flight.call + ' wants triple operation????'
                     pass
+        else:
+            # no track and only approach into consideration
+            bypass = True
+
         # save interesting parameters for zones 1 an
         if 0 < zone < 3:
             self.vrate_list.append(vrate)
             self.inclin_list.append(inclin)
             self.gs_list.append(gs)
             self.track_list.append(track)
-
-        else:
-            # no track and only approach into consideration
-            bypass = True
+            
         track = track % 360  # Wrapping [0, 360] just in case
         # operation identified by this parameters
         runway = ''
@@ -262,10 +263,10 @@ class Operation:
                 if UorD == 'D':
                     # normal 18 op
                     pass
-                # elif self.get_mean_inclin() > -1.5:
+                elif self.get_mean_inclin() > -1.5:
                 # elif UorD == 'U':
                 #     # aborting approach
-                #     event = miss_event
+                    event = miss_event
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
                 runway = '36'
@@ -285,10 +286,10 @@ class Operation:
                 if UorD == 'D':
                     # normal 32 op
                     pass
-                # elif self.get_mean_inclin() > -1.5:
+                elif self.get_mean_inclin() > -1.5:
                 # elif UorD == 'U':
                 #     # aborting approach
-                #     event = miss_event
+                    event = miss_event
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
                 runway = '14'
                 if EorW == 'W':
