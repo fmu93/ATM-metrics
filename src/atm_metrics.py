@@ -567,23 +567,27 @@ class ConfigLog:
             self.config_str += op + '\t'
         self.config_str += '\n'
 
-
-
-    def add_config(self, from_time, until_time, config, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss32L, miss32R, mis18L, mis18R):
-        self.config_str = self.config_str + "%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (from_time, until_time, config, '{:d}'.format(arr32L), '{:d}'.format(arr32R),
-                       '{:d}'.format(dep36L), '{:d}'.format(dep36R),  '{:d}'.format(arr18L), '{:d}'.format(arr18R),
-                       '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss32L), '{:d}'.format(miss32R), '{:d}'.format(mis18L), '{:d}'.format(mis18R))
+    # def add_config(self, from_time, until_time, config, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss32L, miss32R, mis18L, mis18R):
+    #     self.config_str = self.config_str + "%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (from_time, until_time, config, '{:d}'.format(arr32L), '{:d}'.format(arr32R),
+    #                    '{:d}'.format(dep36L), '{:d}'.format(dep36R),  '{:d}'.format(arr18L), '{:d}'.format(arr18R),
+    #                    '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss32L), '{:d}'.format(miss32R), '{:d}'.format(mis18L), '{:d}'.format(mis18R))
+    #     return self.config_str
+    def add_config(self, from_time, until_time, config, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss):
+        self.config_str = self.config_str + "%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
+        from_time, until_time, config, '{:d}'.format(arr32L), '{:d}'.format(arr32R),
+        '{:d}'.format(dep36L), '{:d}'.format(dep36R), '{:d}'.format(arr18L), '{:d}'.format(arr18R),
+        '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss))
         return self.config_str
 
     def write(self):
-        # final_op_list = [[call, icao, typ, timestamp, performance, vrate, incli, hspeed], ...]
+        # final_op_list = [[call, icao, typ, timestamp, performance, vrate, incli, gs, track], []...]
         log_file_name = '%s\\%s_configLog.txt' % (self.path, self.master_name)
         first_epoch = None
         last_conf = None
         config = None
         for final_guess in self.final_op_list:
             if final_guess[3] is not None and final_guess[4] is not None:
-                first_epoch = final_guess[0][3]
+                first_epoch = final_guess[3]
                 if '32' in final_guess[4] or '36' in final_guess[4]:
                     last_conf = 'N'
                     config = 'N'
@@ -592,21 +596,19 @@ class ConfigLog:
                     config = 'S'
                 break
 
-        first_time = time_string(first_epoch)
-        from_time = first_time
+        from_time = time_string(first_epoch)
         last_epoch = self.final_op_list[-1][3]
         until_time = time_string(last_epoch)
 
         prev_line = [0, 0, 0, 0, '']  # call, icao, type, timestamp, op
-        counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R...
+        counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]  # 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R...
         log = False
         for i, line in enumerate(self.final_op_list):
             prev_timestamp = prev_line[3]
-            prev_op = prev_line[4]
+            prev_op = prev_line[4] if len(prev_line[4]) < 4 else prev_line[4][0:6]
             op_timestamp = line[3]
-            op = None
-            if line[4] is not None and len(line[4]) > 2:
-                op = line[4][0:6]  # TODO sketchy indexing array.. class the place up
+            op = line[4] if len(line[4]) < 4 else line[4][0:6]
+
             if op_timestamp is not None and op is not None and prev_op is not None:
                 if '32' in op or '36' in op:  # now NORTH
                     if '18' in prev_op or '14' in prev_op:  # prev south
@@ -627,9 +629,8 @@ class ConfigLog:
                 if log:
                     self.add_config(from_time, until_time, config, counter[0], counter[1],
                                     counter[2], counter[3], counter[4], counter[5],
-                                    counter[6], counter[7], counter[8], counter[9],
-                                    counter[10], counter[11])
-                    counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                                    counter[6], counter[7], counter[8])
+                    counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]
                     log = False
                     from_time = time_string(op_timestamp)  # first south op
 
@@ -641,8 +642,8 @@ class ConfigLog:
 
         self.add_config(from_time, until_time, last_conf, counter[0], counter[1],
                         counter[2], counter[3], counter[4], counter[5],
-                        counter[6], counter[7], counter[8], counter[9],
-                        counter[10], counter[11])
+                        counter[6], counter[7], counter[8])
+
         with open(log_file_name, 'w') as config_log:
             config_log.write(self.config_str)
 
@@ -863,7 +864,7 @@ class Analyzer:
                 # prev20_5_pos = current_aircraft.get_position_delimited(epoch_now, 5, 20)
                 prev_vel = current_aircraft.get_velocity_delimited(epoch_now, 0, 20)
                 if prev_vel is not None:
-                    vrate = prev_vel.vrate / 0.00508  # fpm
+                    vrate = prev_vel.vrate / 0.00508  # fpm TODO change decoder to output fmp and knots
                     gs = prev_vel.gs / 0.514444  # knots
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
