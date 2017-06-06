@@ -864,8 +864,8 @@ class Analyzer:
                 # prev20_5_pos = current_aircraft.get_position_delimited(epoch_now, 5, 20)
                 prev_vel = current_aircraft.get_velocity_delimited(epoch_now, 0, 20)
                 if prev_vel is not None:
-                    vrate = prev_vel.vrate / 0.00508  # fpm TODO change decoder to output fmp and knots
-                    gs = prev_vel.gs / 0.514444  # knots
+                    vrate = prev_vel.vrate  # fpm
+                    gs = prev_vel.gs  # knots
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
