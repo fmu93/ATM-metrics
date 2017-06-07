@@ -165,6 +165,7 @@ class Operation:
         self.track_allow_landing = 25  # +- 25 degree to compare track
         self.track_allow_takeoff = 50
         self.last_op_guess = None
+        self.IorO = None  # In or Out of airport, Approach or Take-Off
         self.min_times = 4
         self.vrate_list = []  # TODO vrate per op only or evaluate throughout zones?
         self.inclin_list = []
@@ -176,7 +177,7 @@ class Operation:
         self.alt_ths_timestamp = None
         self.threshold = airport_altitude + 600  # m
 
-    def set_op_guess(self, epoch, NorS, EorW, track, UorD, vrate, inclin, gs, zone):
+    def set_op_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time between guesses
         bypass = False
         if zone < 4:
@@ -205,6 +206,10 @@ class Operation:
             self.track_list.append(track)
 
         track = track % 360  # Wrapping [0, 360] just in case
+        if vrate > 0:
+            UorD = 'U'
+        else:
+            UorD = 'D'
         # operation identified by this parameters
         runway = ''
         side = ''
@@ -212,6 +217,7 @@ class Operation:
         if NorS == 'N':
             # UorD ~ D180 or U360
             if (180 - self.track_allow_landing <= track <= 180 + self.track_allow_landing) or bypass:
+                self.IorO = 'I'
                 runway = '18'
                 if EorW == 'W':
                     side = 'R'
@@ -224,6 +230,7 @@ class Operation:
                     event = miss_event
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
+                self.IorO = 'O'
                 runway = '36'
                 if EorW == 'W':
                     side = 'L'
@@ -233,6 +240,7 @@ class Operation:
         elif NorS == 'S':
             # UorD ~ D320 or U140
             if (320 - self.track_allow_landing <= track <= 320 + self.track_allow_landing) or bypass:
+                self.IorO = 'I'
                 runway = '32'
                 if EorW == 'W':
                     side = 'L'
@@ -244,6 +252,7 @@ class Operation:
                 elif inclin > -1 and 0 < zone < 3:
                     event = miss_event
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
+                self.IorO = 'O'
                 runway = '14'
                 if EorW == 'W':
                     side = 'R'
@@ -268,9 +277,13 @@ class Operation:
         return self.op_timestamp
 
     def set_timestamp(self, epoch, zone, UorD):
-        if epoch is not None and (self.op_timestamp is None or zone < self.pref):
+        #  Out/takeoff, keep first -> only save first time
+        if self.IorO == 'O' and (self.op_timestamp is None or zone < self.pref):
             self.op_timestamp = epoch
             self.pref = zone
+        #  In/landing, always overwrite as it gets lower zone
+        elif self.IorO == 'I':
+            self.op_timestamp = epoch
 
     def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
         sign = None
@@ -363,12 +376,12 @@ class Flight:
     def set_latest_time(self, epoch):
         self.latest_time = epoch
 
-    def set_guess(self, epoch, NorS, EorW, track, UorD, vrate, inclin, gs, zone):
+    def set_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time gap/new flight
         if epoch - self.latest_time > 600:
             # more than 10 minutes with no calls and new guess is showing up
             self.aircraft.set_call(no_call, epoch)
-        self.timestamp = self.operation.set_op_guess(epoch, NorS, EorW, track, UorD, vrate, inclin, gs, zone)
+        self.timestamp = self.operation.set_op_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
 
     def get_operation(self):
         [operation_str, avg_op_vrate, avg_op_incl, avg_op_hspeed, avg_op_track] = self.operation.validate_operation()
@@ -846,10 +859,6 @@ class Analyzer:
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
-                    if vrate > 0:
-                        UorD = 'U'
-                    else:
-                        UorD = 'D'
                     found_data = True
 
                 # if prev20_5_pos is not None:
@@ -879,13 +888,13 @@ class Analyzer:
                     #   \ C1 - \ D1
 
                     if poly_SE.contains(pos):  # only for approaches
-                        current_flight.set_guess(epoch_now, 'S', 'E', ttrack, UorD, vrate, inclin, gs, 4)
+                        current_flight.set_guess(epoch_now, 'S', 'E', ttrack, vrate, inclin, gs, 4)
                     elif poly_SW.contains(pos):
-                        current_flight.set_guess(epoch_now, 'S', 'W', ttrack, UorD, vrate, inclin, gs, 4)
+                        current_flight.set_guess(epoch_now, 'S', 'W', ttrack, vrate, inclin, gs, 4)
                     elif poly_NE.contains(pos):
-                        current_flight.set_guess(epoch_now, 'N', 'E', ttrack, UorD, vrate, inclin, gs, 4)
+                        current_flight.set_guess(epoch_now, 'N', 'E', ttrack, vrate, inclin, gs, 4)
                     elif poly_NW.contains(pos):
-                        current_flight.set_guess(epoch_now, 'N', 'W', ttrack, UorD, vrate, inclin, gs, 4)
+                        current_flight.set_guess(epoch_now, 'N', 'W', ttrack, vrate, inclin, gs, 4)
 
                     if alt_uncorrected <= self.guess_alt_ths + airport_altitude:
                         current_diff = current_aircraft.get_current_diff()
@@ -949,7 +958,7 @@ class Analyzer:
                                 current_flight.operation.set_alt_ths_timestamp(epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
                             zone = int(poly[1])
-                            current_flight.set_guess(epoch_now, NorS, EorW, ttrack, UorD, vrate, inclin, gs, zone)
+                            current_flight.set_guess(epoch_now, NorS, EorW, ttrack, vrate, inclin, gs, zone)
 
     def end(self):
         self.master_database.close()
