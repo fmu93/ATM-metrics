@@ -60,52 +60,6 @@ class Velocity:
         self.epoch = epoch
 
 
-class Timestamper:
-    '''sets the timestamp for each operation,
-    defined when crossing a certain TIMESTAMP THRESHOLD. It can also return the timestamp for a given callsign'''
-
-    def __init__(self):
-        self.guess_timestamp = None
-        self.alt_ths_timestamp = None
-        self.sign = None  # TODO to check for misses?
-        self.half = None  # same as above
-        self.pref = None
-        self.threshold = airport_altitude + 600  # m
-
-    def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
-        sign = None
-        if alt > self.threshold > prev_alt:
-            sign = 0  # up
-        elif alt < self.threshold < prev_alt:
-            sign = 1  # dq
-        if sign is not None:
-            if self.alt_ths_timestamp is None:
-                self.alt_ths_timestamp = round(prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
-                self.sign = sign
-                self.half = half
-            else:
-                # second self.alt_ths_timestamp. TODO Evaluate prev and actual sign and half
-                pass
-        return self.alt_ths_timestamp
-
-    def set_timestamp(self, epoch, zone, UorD):
-        timestamp = None
-        #  keep first -> only save first time
-        if UorD == 'U':  # up
-            if epoch is not None and (self.guess_timestamp is None or zone < self.pref):
-                timestamp = epoch
-        #  always overwrite as it gets lower zone
-        elif UorD == 'D':  # dw
-            if epoch is not None:
-                timestamp = epoch
-
-        if timestamp is not None:
-            self.guess_timestamp = timestamp
-            self.pref = zone
-
-        return self.guess_timestamp
-
-
 class TrackInegrator:
     '''At the time this class is unsued. It's purpose is to integrate track angles to determine when a holding
     operation is performed'''
@@ -212,12 +166,15 @@ class Operation:
         self.track_allow_takeoff = 50
         self.last_op_guess = None
         self.min_times = 4
-        self.timestamper = Timestamper()
-        self.op_timestamp = None
         self.vrate_list = []  # TODO vrate per op only or evaluate throughout zones?
         self.inclin_list = []
         self.gs_list = []
         self.track_list = []
+
+        self.op_timestamp = None
+        self.pref = None
+        self.alt_ths_timestamp = None
+        self.threshold = airport_altitude + 600  # m
 
     def set_op_guess(self, epoch, NorS, EorW, track, UorD, vrate, inclin, gs, zone):
         # check for time between guesses
@@ -298,7 +255,7 @@ class Operation:
             # timestamp as close to zone 0, but not inside zone 0
             if 0 < zone < 4:
                 self.last_op_guess = epoch
-                self.op_timestamp = self.timestamper.set_timestamp(epoch, zone, UorD)
+                self.set_timestamp(epoch, zone, UorD)
 
             if guess_str not in self.op_guess_dict.keys():
                 self.op_guess_dict[guess_str] = OpGuess(guess_str, NorS, EorW, UorD, event)
@@ -310,6 +267,26 @@ class Operation:
     def get_op_timestamp(self):
         return self.op_timestamp
 
+    def set_timestamp(self, epoch, zone, UorD):
+        if epoch is not None and (self.op_timestamp is None or zone < self.pref):
+            self.op_timestamp = epoch
+            self.pref = zone
+
+    def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
+        sign = None
+        if alt > self.threshold > prev_alt:
+            sign = 0  # up
+        elif alt < self.threshold < prev_alt:
+            sign = 1  # dq
+        if sign is not None:
+            if self.alt_ths_timestamp is None:
+                self.alt_ths_timestamp = round(prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
+                # self.sign = sign
+                # self.half = half
+            else:
+                # second self.alt_ths_timestamp. TODO Evaluate prev and actual sign and half
+                pass
+
     def validate_operation(self):
         operation_str = None
         north_zones = [None, None, None, None, None]  # [Zone0, ...]
@@ -319,27 +296,27 @@ class Operation:
         delS4 = True
         south_weight = 0.0
         for op_guess in self.op_guess_dict.values():
-            for zone in op_guess.zone_dict.values():
-                if zone.times <= self.min_times:
+            for zone_class in op_guess.zone_dict.values():
+                if zone_class.times <= self.min_times:
                     continue  # pass on weak guesses
                 if op_guess.NorS == 'N':
-                    if zone.zone < 4:  # dont weight for zone 4
-                        north_weight += zone.times
-                    if north_zones[zone.zone] is None:
-                        north_zones[zone.zone] = zone
-                    elif zone.times > north_zones[zone.zone].times:
+                    if zone_class.zone < 4:  # dont weight for zone 4
+                        north_weight += zone_class.times
+                    if north_zones[zone_class.zone] is None:
+                        north_zones[zone_class.zone] = zone_class
+                    elif zone_class.times > north_zones[zone_class.zone].times:
                         # save only one zone, but each zone remembers which guess it was from
-                        north_zones[zone.zone] = zone
+                        north_zones[zone_class.zone] = zone_class
                         if op_guess.UorD == 'D':
                             delN4 = False
 
                 elif op_guess.NorS == 'S':
-                    if zone.zone < 4:
-                        south_weight += zone.times
-                    if south_zones[zone.zone] is None:
-                        south_zones[zone.zone] = zone
-                    elif zone.times > south_zones[zone.zone].times:
-                        south_zones[zone.zone] = zone
+                    if zone_class.zone < 4:
+                        south_weight += zone_class.times
+                    if south_zones[zone_class.zone] is None:
+                        south_zones[zone_class.zone] = zone_class
+                    elif zone_class.times > south_zones[zone_class.zone].times:
+                        south_zones[zone_class.zone] = zone_class
                         if op_guess.UorD == 'D':
                             delS4 = False
 
@@ -969,7 +946,7 @@ class Analyzer:
                             if prev30_10_pos is not None:  # can happen there was no prev data
                                 prev_alt_corr = prev30_10_pos.alt - current_diff
                                 prev_epoch = prev30_10_pos.epoch
-                                current_flight.operation.timestamper.set_alt_ths_timestamp(epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
+                                current_flight.operation.set_alt_ths_timestamp(epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
                             zone = int(poly[1])
                             current_flight.set_guess(epoch_now, NorS, EorW, ttrack, UorD, vrate, inclin, gs, zone)
