@@ -166,7 +166,7 @@ class Operation:
         self.track_allow_takeoff = 50
         self.last_op_guess = None
         self.IorO = None  # In or Out of airport, Approach or Take-Off
-        self.min_times = 4
+        self.min_times = 3
         self.vrate_list = []  # TODO vrate per op only or evaluate throughout zones?
         self.inclin_list = []
         self.gs_list = []
@@ -424,7 +424,7 @@ class Aircraft:
                 # was added for a while until it's previous call appears again. TODO merge no_call with prev/current call
                 # this can happen when ac sends call for the first time while docked and again more than half an
                 # hour later after take off, so it's ok to not merge in this case
-                print self.icao + ' lost a call: ' + call + ' at ' + time_string(self.flight_dict[call].latest_time) + ' and is back at ' + time_string(epoch)
+                # print self.icao + ' lost a call: ' + call + ' at ' + time_string(self.flight_dict[call].latest_time) + ' and is back at ' + time_string(epoch)
                 self.flight_dict.pop(no_call, None)  # remove key of unknown call
                 self.flight_dict[call].set_latest_time(epoch)
                 pass
@@ -521,7 +521,6 @@ class FlightsLog:
 
     def write(self):
         log_file_name = '%s\\%s_flightsLog.txt' % (self.path, self.master_name)
-        print log_file_name
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
@@ -791,7 +790,7 @@ class Analyzer:
                 continue
             prev_epoch = epoch_now
 
-            if epoch_now % 1800 == 0:
+            if epoch_now % 3600 == 0:
                 if print_time:
                     print time_string(epoch_now) + ' ...'
                     print_time = False
@@ -856,6 +855,8 @@ class Analyzer:
                 if prev_vel is not None:
                     vrate = prev_vel.vrate  # fpm
                     gs = prev_vel.gs  # knots
+                    if gs == 0:
+                        continue
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
@@ -1012,14 +1013,16 @@ class GUI:
         print 'Ready to analyse:'
         for infile in self.infiles:
             print infile.name
+        print ''
 
     def run_analyser(self):
         for infile in self.infiles:
+            print 'Analyzing ' + infile.name
             analyser = Analyzer(infile)
             analyser.run(self.icao_filter)
             analyser.end()
 
-            print "Done!"
+            print "Done with " + infile.name+ '\n'
 
 
 if __name__ == '__main__':
