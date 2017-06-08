@@ -194,7 +194,7 @@ class Operation:
                     # a second operation is claiming yet another second operation? Srsly...
                     print '????? ' + self.flight.aircraft.icao + ' ' + self.flight.call + ' wants triple operation????'
                     pass
-        else:
+        if zone == 4:
             # no track and only approach into consideration
             bypass = True
 
