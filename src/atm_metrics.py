@@ -686,7 +686,7 @@ class Analyzer:
         self.icao_database = IcaoDatabase()
 
         self.icao_dict = {}  # [icao] Flight class
-        self.call_list2 = []  # collect all calls and validate those which appear more than once
+        self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
         self.guess_alt_ths = 1800  # [m] above airport to discard flyovers
         self.generic_current_diff = 0.0
 
@@ -807,8 +807,8 @@ class Analyzer:
 
             call = str(data[3]).strip()
             if not call == '':  # call found in or outside airport.
-                if call not in self.call_list2:  # record call if seen more than once
-                    self.call_list2.append(call)
+                if call+icao0 not in self.call_icao_list:  # record call+icao0 if seen more than once
+                    self.call_icao_list.append(call+icao0)
                 else:
                     current_aircraft.set_call(call, epoch_now)  # already fixes unknown call to op_timestamp
             current_flight = current_aircraft.get_current_flight(epoch_now)  # will be no_call flight if new
