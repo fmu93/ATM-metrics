@@ -524,7 +524,7 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call     \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\t(deg)\tGS(kts)\ttrack\toperation\n")
+            guess_log_file.write("call     \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\n")
             for guess_line in self.final_op_list:
                 date = time_string(guess_line[3])
                 hour = time.gmtime(guess_line[3]).tm_hour
@@ -534,7 +534,7 @@ class FlightsLog:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                                          ('{:<9}'.format(guess_line[0]), '{:6}'.format(guess_line[1]),
                                           '{:4}'.format(guess_line[2]), guess_line[3], date, '{:+05.0f}'.format(guess_line[5]),
-                                          '{:+04.1f}'.format(guess_line[6]), '{:05.1f}'.format(guess_line[7]),
+                                           '{:05.1f}'.format(guess_line[7]), '{:+04.1f}'.format(guess_line[6]),
                                           '{:03.0f}'.format(guess_line[8]), guess_line[4]))
                 except:
                     pass
@@ -1021,8 +1021,9 @@ class GUI:
             analyser = Analyzer(infile)
             analyser.run(self.icao_filter)
             analyser.end()
-
             print "Done with " + infile.name+ '\n'
+
+        print "Done with all files!\n"
 
 
 if __name__ == '__main__':
