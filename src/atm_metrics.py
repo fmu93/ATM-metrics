@@ -180,8 +180,8 @@ class Operation:
     def set_op_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time between guesses
         bypass = False
-        if zone < 4:
-            # 7 min between guesses?
+        if 0 < zone < 4:
+            # 7 min between guesses? not in zone 0 because of taxiing in this zone
             if self.last_op_guess is not None and epoch - self.last_op_guess > 420:
                 if epoch - self.last_op_guess > 1800:
                     # make call  no call
