@@ -99,7 +99,7 @@ class Performance2:
                     if zone.zone > 0 and operation_str is not None:
                         if guess_str[0:2] == operation_str[0:2] and guess_str != operation_str:
                             # next zone guess has same runway but not side (or event)
-                            operation_str += ' approach from ' + guess_str + ' changed at ' + str(zone.zone)
+                            operation_str += ' approach from ' + guess_str + ' at zone ' + str(zone.zone)
                             break
                     elif operation_str is None and zone.zone < 4:
                         operation_str = guess_str
@@ -166,6 +166,7 @@ class Operation:
         self.track_allow_takeoff = 50
         self.last_op_guess = None
         self.IorO = None  # In or Out of airport, Approach or Take-Off
+        self.LorT = None  # basically same as IorO but only after validation
         self.min_times = 3
         self.vrate_list = []  # TODO vrate per op only or evaluate throughout zones?
         self.inclin_list = []
@@ -176,24 +177,28 @@ class Operation:
         self.pref = None
         self.alt_ths_timestamp = None
         self.threshold = airport_altitude + 600  # m
+        self.val_operation_str = ''
 
     def set_op_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time between guesses
         bypass = False
-        if 0 < zone < 4:
-            # 7 min between guesses? not in zone 0 because of taxiing in this zone
-            if self.last_op_guess is not None and epoch - self.last_op_guess > 420:
-                if epoch - self.last_op_guess > 1800:
-                    # make call  no call
-                    self.flight.aircraft.set_call(no_call, epoch)
-                elif not self.flight.has_second_operation:
-                    self.flight.has_second_operation = True
-                    self.flight.aircraft.set_call(self.flight.call + call_suffix, epoch)
-                    self.flight.aircraft.flight_dict[self.flight.call + call_suffix].is_second_operation = True
-                else:
-                    # a second operation is claiming yet another second operation? Srsly...
-                    print '????? ' + self.flight.aircraft.icao + ' ' + self.flight.call + ' wants triple operation????'
-                    pass
+        # if 0 < zone < 4:
+        #     # 7 min or more between guesses? not in zone 0 because of taxiing in this zone
+        #     if self.last_op_guess is not None and epoch - self.last_op_guess > 420:
+        #         # new operation for this flight
+        #         self.flight.
+        #
+        #         if epoch - self.last_op_guess > 1800:
+        #             # make call  no call
+        #             self.flight.aircraft.set_call(no_call, epoch)
+        #         elif not self.flight.has_second_operation:
+        #             self.flight.has_second_operation = True
+        #             self.flight.aircraft.set_call(self.flight.call + call_suffix, epoch)
+        #             self.flight.aircraft.flight_dict[self.flight.call + call_suffix].is_second_operation = True
+        #         else:
+        #             # a second operation is claiming yet another second operation? Srsly...
+        #             print '????? ' + self.flight.aircraft.icao + ' ' + self.flight.call + ' wants triple operation????'
+        #             pass
         if zone == 4:
             # no track and only approach into consideration
             bypass = True
@@ -301,7 +306,6 @@ class Operation:
                 pass
 
     def validate_operation(self):
-        operation_str = None
         north_zones = [None, None, None, None, None]  # [Zone0, ...]
         north_weight = 0.0  # all times of north zones 0-3
         delN4 = True
@@ -345,9 +349,14 @@ class Operation:
             chosen_half = north_zones
         elif south_weight > 1.2*north_weight:  # north weights less than half of south, pick south
             chosen_half = south_zones
+
         if chosen_half is not None:
-            operation_str = Performance2(chosen_half).get_operation()
-        return [operation_str, self.get_mean_vrate(), self.get_mean_inclin(), self.get_mean_gs(), self.get_mean_track()]
+            self.val_operation_str = Performance2(chosen_half).get_operation()
+            if self.val_operation_str is not None and ('32' in self.val_operation_str or '18' in self.val_operation_str):
+                self.LorT = 'L'
+            elif self.val_operation_str is not None and ('36' in self.val_operation_str or '14' in self.val_operation_str):
+                self.LorT = 'T'
+        return self
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)
@@ -368,10 +377,7 @@ class Flight:
         self.aircraft = aircraft
         self.call = call
         self.latest_time = epoch
-        self.operation = Operation(self)
-        self.timestamp = None
-        self.is_second_operation = False
-        self.has_second_operation = False
+        self.operations = []  # [Operation()]
 
     def set_latest_time(self, epoch):
         self.latest_time = epoch
@@ -379,18 +385,43 @@ class Flight:
     def set_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time gap/new flight
         if epoch - self.latest_time > 600:
-            # more than 10 minutes with no calls and new guess is showing up
+            # more than 10 minutes with no calls and new guess is showing up, make new 'no_call' flight
             self.aircraft.set_call(no_call, epoch)
-        self.timestamp = self.operation.set_op_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
+            # don't forget to assign this new guess to the new flight
+            # self.aircraft.get_current_flight().set_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
+            return
 
-    def get_operation(self):
-        [operation_str, avg_op_vrate, avg_op_incl, avg_op_hspeed, avg_op_track] = self.operation.validate_operation()
-        if self.has_second_operation:
-            operation_str = str(operation_str) + ' (missed operation)'
-        elif self.is_second_operation:
-            operation_str = str(operation_str) + ' (second operation aft: ' +\
-                            '{:1.2f}'.format((self.timestamp - self.aircraft.flight_dict[self.call.replace(call_suffix, '')].timestamp) / 60.0) + ' min)'
-        return [operation_str, avg_op_vrate, avg_op_incl, avg_op_hspeed, avg_op_track]
+        if not len(self.operations) > 0 or (len(self.operations) > 0 and
+            self.operations[-1].last_op_guess is not None and epoch - self.operations[-1].last_op_guess > 420):
+            # first guess of flight or new guess 7 minutes after latest op guess time, make new Operation
+            self.operations.append(Operation(self))
+        self.operations[-1].set_op_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
+        return
+
+    def get_operations(self):
+        operation_list = []  # Operation
+        if len(self.operations) == 1:
+            operation_list.append(self.operations[0].validate_operation())  # one operation
+        elif len(self.operations) > 1:  # several operations
+            prev_LorT = ''
+            for i in range(len(self.operations)):
+                validated_op = self.operations[i].validate_operation()
+                if i > 0:
+                    if prev_LorT == 'L' and validated_op.LorT == 'L':
+                        # two consecuent attempts to land
+                        operation_list[i-1].val_operation_str = str(operation_list[i-1].val_operation_str) + ' (missed approach)'
+                        if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
+                            pass
+                        else:
+                            validated_op.val_operation_str = str(validated_op.val_operation_str) + ' (second approach aft: ' +\
+                                    '{:1.2f}'.format((validated_op.op_timestamp -
+                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min)'
+                    else:
+                        validated_op.val_operation_str = str(validated_op.val_operation_str) + ' (second operation)'
+
+                operation_list.append(validated_op)
+                prev_LorT = validated_op.LorT
+        return operation_list
 
 
 class Aircraft:
@@ -428,8 +459,6 @@ class Aircraft:
                 self.flight_dict.pop(no_call, None)  # remove key of unknown call
                 self.flight_dict[call].set_latest_time(epoch)
                 pass
-            elif call + call_suffix in self.flight_dict.keys():
-                self.flight_dict[call + call_suffix].set_latest_time(epoch)
             else:
                 # there are no previous 'no call' flights, simply update current flight
                 self.flight_dict[call].set_latest_time(epoch)
@@ -489,7 +518,7 @@ class Aircraft:
 
     def set_new_pos(self, epoch, lat, lon, alt):
         for key in sorted(self.pos_buffer_dict):
-            if epoch - key > 600:
+            if epoch - key > 300:
                 self.pos_buffer_dict.pop(key, None)  # remove key for old position
         self.pos_buffer_dict[epoch] = Position(lat, lon, alt, epoch)
 
@@ -500,7 +529,7 @@ class Aircraft:
 
     def set_new_vel(self, epoch, vrate, gs, ttrack):
         for key in sorted(self.vel_buffer_dict):
-            if epoch - key > 600:
+            if epoch - key > 300:
                 self.vel_buffer_dict.pop(key, None)  # remove key for old entry
         self.vel_buffer_dict[epoch] = Velocity(epoch, vrate, gs, ttrack)
 
@@ -524,7 +553,7 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call     \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\n")
+            guess_log_file.write("call   \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\n")
             for guess_line in self.final_op_list:
                 date = time_string(guess_line[3])
                 hour = time.gmtime(guess_line[3]).tm_hour
@@ -532,7 +561,7 @@ class FlightsLog:
                     guess_log_file.write('\n')
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                                         ('{:<9}'.format(guess_line[0]), '{:6}'.format(guess_line[1]),
+                                         ('{:<7}'.format(guess_line[0]), '{:6}'.format(guess_line[1]),
                                           '{:4}'.format(guess_line[2]), guess_line[3], date, '{:+05.0f}'.format(guess_line[5]),
                                            '{:05.1f}'.format(guess_line[7]), '{:+04.1f}'.format(guess_line[6]),
                                           '{:03.0f}'.format(guess_line[8]), guess_line[4]))
@@ -588,6 +617,7 @@ class ConfigLog:
         from_time = time_string(first_epoch)
         last_epoch = self.final_op_list[-1][3]
         until_time = time_string(last_epoch)
+        last_time = time_string(last_epoch)
 
         prev_line = [0, 0, 0, 0, '']  # call, icao, type, timestamp, op
         counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]  # 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R...
@@ -629,7 +659,7 @@ class ConfigLog:
                     pass
                 prev_line = line
 
-        self.add_config(from_time, until_time, last_conf, counter[0], counter[1],
+        self.add_config(from_time, last_time, last_conf, counter[0], counter[1],
                         counter[2], counter[3], counter[4], counter[5],
                         counter[6], counter[7], counter[8])
 
@@ -692,8 +722,6 @@ class Analyzer:
 
         global no_call
         no_call = 'no_call'
-        global call_suffix
-        call_suffix = "#2"
         global airport_altitude
         airport_altitude = 600
         global miss_event
@@ -956,7 +984,7 @@ class Analyzer:
                             if prev30_10_pos is not None:  # can happen there was no prev data
                                 prev_alt_corr = prev30_10_pos.alt - current_diff
                                 prev_epoch = prev30_10_pos.epoch
-                                current_flight.operation.set_alt_ths_timestamp(epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
+                                # current_flight.operation.set_alt_ths_timestamp(epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
                             zone = int(poly[1])
                             current_flight.set_guess(epoch_now, NorS, EorW, ttrack, vrate, inclin, gs, zone)
@@ -967,19 +995,21 @@ class Analyzer:
         # for all flights get validated_operation
         final_op_list = []
         for aircraft in self.icao_dict.values():
-            for flight in aircraft.flight_dict.values():
-                op_timestamp = flight.operation.get_op_timestamp()
-                operation_list = flight.get_operation()
-                operation = operation_list[0]
-                operation_list = [0.0 if x is None else x for x in operation_list[1:]]
-                avg_vrate = operation_list[0]
-                avg_inclin = operation_list[1]
-                avg_hspeed = operation_list[2]
-                avg_op_track = operation_list[3]
-                if op_timestamp is not None or operation is not None:
-                    call = '{:<7}'.format(flight.call)
-                    typ = self.icao_database.get_type(aircraft.icao)
-                    final_op_list.append([call, aircraft.icao, typ, op_timestamp, str(operation), avg_vrate, avg_inclin, avg_hspeed, avg_op_track])
+            for flight in aircraft.flight_dict.values():  # TODO flight has several operations, return list of validations
+                for operation in flight.get_operations():
+                    if operation.val_operation_str is not None or operation.op_timestamp is not None:
+                        operation_str = operation.val_operation_str
+                        op_timestamp = operation.op_timestamp
+                        avg_vrate = operation.get_mean_vrate()
+                        avg_inclin = operation.get_mean_inclin()
+                        avg_gs = operation.get_mean_gs()
+                        avg_op_track = operation.get_mean_track()
+
+                        if op_timestamp is not None:
+                            call = '{:<7}'.format(flight.call)
+                            typ = self.icao_database.get_type(aircraft.icao)
+                            final_op_list.append([call, aircraft.icao, typ, op_timestamp, str(operation_str), avg_vrate, avg_inclin, avg_gs, avg_op_track])
+
         final_op_list = sorted(final_op_list, key=itemgetter(3))  # in reverse time order
 
         FlightsLog(os.path.dirname(self.filepath), self.master_name, final_op_list).write()
@@ -989,7 +1019,7 @@ class Analyzer:
 
 class GUI:
     def __init__(self, master):
-        # self.icao_filter = "aa9808"
+        # self.icao_filter = "3cca06"
         self.icao_filter = None
         self.infiles = None
         master.title("atm metrics")
