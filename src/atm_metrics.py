@@ -26,20 +26,20 @@ class IcaoDatabase:
     '''loads the latest icao_database in memory for getting type or regist number'''
     # TODO integrate the other database instead
     def __init__(self):
-        self.icao_database = [[0, 0, 0, 0, 0, 0, 0]]
-        with open('../resources/icao_database.txt', 'r') as icao_database:
+        self.icao_database = {}
+        with open('../resources/aircraft_db.csv', 'r') as icao_database:
             for icao_data_line in icao_database.readlines():
-                self.icao_database.append(icao_data_line.split('>'))
+                # icao,regid,mdl,type,operator
+                line = icao_data_line.split(',')
+                self.icao_database[line[0].upper()] = line
 
     def get_type(self, icao):
-        for icao_data_line in reversed(self.icao_database):
-            if icao == icao_data_line[0]:
-                return icao_data_line[4]
+        if icao.upper() in self.icao_database.keys():
+            return self.icao_database[icao.upper()][2]
 
-    def get_regist(self, icao):
-        for icao_data_line in reversed(self.icao_database):
-            if icao == icao_data_line[0]:
-                return icao_data_line[1]
+    def get_regid(self, icao):
+        if icao.upper() in self.icao_database.keys():
+            return self.icao_database[icao.upper()][1]
 
 
 class Position:
@@ -419,7 +419,7 @@ class Flight:
 
 class Aircraft:
 
-    def __init__(self, icao, first_seen, type):
+    def __init__(self, icao, first_seen, type, regid):
         self.icao = icao
         self.flight_dict = {}  # [call] Flight
         self.first_seen = first_seen
@@ -430,6 +430,7 @@ class Aircraft:
         self.pos_buffer_dict = {}  # [epoch] records all positions but only few minutes before
         self.vel_buffer_dict = {}  # [epoch]
         self.type = type
+        self.regid = regid
 
     def set_call(self, call, epoch):
         # check if this new call is the one of a prev aircraft that didn't send its call
@@ -829,7 +830,8 @@ class Analyzer:
                 continue
 
             if icao0 not in self.icao_dict.keys():
-                self.icao_dict[icao0] = Aircraft(icao0, epoch_now, self.icao_database.get_type(icao0))
+                self.icao_dict[icao0] = Aircraft(icao0, epoch_now,
+                                                 self.icao_database.get_type(icao0), self.icao_database.get_regid(icao0))
             current_aircraft = self.icao_dict[icao0]
             current_aircraft.last_seen = epoch_now
 
