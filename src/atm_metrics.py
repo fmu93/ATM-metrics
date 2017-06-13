@@ -83,39 +83,6 @@ class TrackInegrator:
             self.integrator_list.append([call, icao, track, 0, epoch])
 
 
-class Performance2:
-
-    def __init__(self, zones):
-        self.zones = zones
-
-    def get_operation(self):
-        operation_str = None  # text guess
-        for zone in self.zones:  # increasing zone 0 - 4
-            if zone is not None:  # Zone class
-                guess_str = zone.guess_class.guess_str
-                if zone.UorD == 'D':
-                    if miss_event in guess_str and 0 < zone.zone < 3:
-                        operation_str = guess_str
-                    if zone.zone > 0 and operation_str is not None:
-                        if guess_str[0:2] == operation_str[0:2] and guess_str != operation_str:
-                            # next zone guess has same runway but not side (or event)
-                            operation_str += ' approach from ' + guess_str + ' at zone ' + str(zone.zone)
-                            break
-                    elif operation_str is None and zone.zone < 4:
-                        operation_str = guess_str
-
-                elif zone.UorD == 'U':
-                    if not zone.is_miss:  # take off
-                        if operation_str is not None and guess_str not in operation_str:
-                            operation_str += ' departure towards ' + guess_str + ' at zone ' + str(zone.zone)
-                            break  # TODO don't stack up performances
-                        else:
-                            operation_str = guess_str
-                    elif zone.zone > 0:  # missed approach, but in zone 0 it gives trouble
-                        operation_str = guess_str
-        return operation_str
-
-
 class ZoneTimes:
     def __init__(self, zone, guess_class, UorD, is_miss):
         self.zone = zone
@@ -180,6 +147,9 @@ class Operation:
         self.val_operation_str = ''
         self.op_comment = ''
 
+    def __lt__(self, other):
+        return self.op_timestamp < other.op_timestamp  # to be able to sort
+
     def set_op_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time between guesses
         bypass = False
@@ -233,7 +203,7 @@ class Operation:
                     # normal 18 op
                     pass
                 elif inclin > -1 and 0 < zone < 3:
-                    event = miss_event
+                    event = miss_event  # TODO calculate distance to ths and elevation and this instant
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
                 self.IorO = 'O'
@@ -280,9 +250,6 @@ class Operation:
 
         return self.op_timestamp
 
-    def get_op_timestamp(self):
-        return self.op_timestamp
-
     def set_timestamp(self, epoch, zone, UorD):
         #  Out/takeoff, keep first -> only save first time
         if self.IorO == 'O' and (self.op_timestamp is None or zone < self.pref):
@@ -292,7 +259,7 @@ class Operation:
         elif self.IorO == 'I':
             self.op_timestamp = epoch
 
-    def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
+    def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):  # TODO define timestamp per runway
         sign = None
         if alt > self.threshold > prev_alt:
             sign = 0  # up
@@ -346,14 +313,38 @@ class Operation:
             del south_zones[4]
 
         # compare weights of north vs south and hopefully delete one of the two
-        chosen_half = None
+        chosen_half_zones = None
         if north_weight >= 1.2*south_weight:  # south weights less than half of north, pick north
-            chosen_half = north_zones
+            chosen_half_zones = north_zones
         elif south_weight > 1.2*north_weight:  # north weights less than half of south, pick south
-            chosen_half = south_zones
+            chosen_half_zones = south_zones
 
-        if chosen_half is not None:
-            self.val_operation_str = Performance2(chosen_half).get_operation()
+        if chosen_half_zones is not None:
+            for zone in chosen_half_zones:  # increasing zone 0 - 4
+                if zone is not None:  # Zone class
+                    guess_str = zone.guess_class.guess_str
+                    # landing
+                    if zone.UorD == 'D':
+                        if zone.guess_class.is_miss and 0 < zone.zone < 3:
+                            self.val_operation_str = guess_str
+                        if zone.zone > 0 and self.val_operation_str:
+                            if guess_str[0:2] == self.val_operation_str[0:2] and guess_str != self.val_operation_str:
+                                # next zone guess has same runway but not side (or event)
+                                self.op_comment += 'approach from ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                break
+                        elif not self.val_operation_str and zone.zone < 4:
+                            self.val_operation_str = guess_str
+                    # take off
+                    elif zone.UorD == 'U':
+                        if not zone.is_miss:  # take off
+                            if self.val_operation_str and guess_str not in self.val_operation_str:
+                                self.op_comment += 'departure towards ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                break  # TODO don't stack up performances
+                            else:
+                                self.val_operation_str = guess_str
+                        elif zone.zone > 0:  # missed approach, but in zone 0 it gives trouble
+                            self.val_operation_str = guess_str
+
             if self.val_operation_str is not None and ('32' in self.val_operation_str or '18' in self.val_operation_str):
                 self.LorT = 'L'
             elif self.val_operation_str is not None and ('36' in self.val_operation_str or '14' in self.val_operation_str):
@@ -401,7 +392,7 @@ class Flight:
         return
 
     def get_operations(self):
-        operation_list = []  # Operation TODO separate operation and comment
+        operation_list = []  # Operation
         if len(self.operations) == 1:
             operation_list.append(self.operations[0].validate_operation())  # one operation
         elif len(self.operations) > 1:  # several operations
@@ -428,7 +419,7 @@ class Flight:
 
 class Aircraft:
 
-    def __init__(self, icao, first_seen):
+    def __init__(self, icao, first_seen, type):
         self.icao = icao
         self.flight_dict = {}  # [call] Flight
         self.first_seen = first_seen
@@ -438,6 +429,7 @@ class Aircraft:
         self.set_call(no_call, first_seen)
         self.pos_buffer_dict = {}  # [epoch] records all positions but only few minutes before
         self.vel_buffer_dict = {}  # [epoch]
+        self.type = type
 
     def set_call(self, call, epoch):
         # check if this new call is the one of a prev aircraft that didn't send its call
@@ -543,7 +535,6 @@ class Aircraft:
 
 class FlightsLog:
     '''writes into file the final_guess_list of the operation analysis'''
-    # final_op_list = [call, icao, typ, time_stamp, performance, operation_comment, avg_vrate, avg_inclin, avg_hspeed, avg_op_track]
 
     def __init__(self, path, master_name, final_op_list):
         self.path = path
@@ -555,19 +546,20 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call    \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\tcomment\n")
-            for guess_line in self.final_op_list:
-                date = time_string(guess_line[3])
-                hour = time.gmtime(guess_line[3]).tm_hour
+            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\tcomment\n")
+            for operation in self.final_op_list:
+                date = time_string(operation.op_timestamp)
+                hour = time.gmtime(operation.op_timestamp).tm_hour
                 if hour - prev_hour > 0 or hour - prev_hour <= -23:
                     guess_log_file.write('\n')
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                                         ('{:<8}'.format(guess_line[0]), '{:6}'.format(guess_line[1]),
-                                          '{:4}'.format(guess_line[2]), guess_line[3], date, '{:+05.0f}'.format(guess_line[6]),
-                                           '{:05.1f}'.format(guess_line[8]), '{:+04.1f}'.format(guess_line[7]),
-                                          '{:03.0f}'.format(guess_line[9]), guess_line[4], guess_line[5]))
-                except:
+                                         ('{:<8}'.format(operation.flight.call), '{:6}'.format(operation.flight.aircraft.icao),
+                                          '{:4}'.format(operation.flight.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
+                                          date, '{:+05.0f}'.format(operation.get_mean_vrate()),
+                                           '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
+                                          '{:03.0f}'.format(operation.get_mean_track()), operation.val_operation_str, operation.op_comment))
+                except Exception:
                     pass
                 prev_hour = hour
 
@@ -581,22 +573,22 @@ class ConfigLog:
         self.path = path
         self.final_op_list = final_op_list
         self.logged_string = ''
-        self.ops = ['32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R', miss_event]  # for now no missed runway identification.   , '8L'+miss_event[0], '8R'+miss_event[0]]
-        self.config_str = "timestamp1\t\t\ttimestamp2\t\t\tconfig\t"
+        self.ops = ['32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R']  # for now no missed runway identification.   , '8L'+miss_event[0], '8R'+miss_event[0]]
+        self.config_str = "From time\t\t\tUntil time\t\t\tCon\tTot\t"
         for op in self.ops:
             self.config_str += op + '\t'
-        self.config_str += '\n'
+        self.config_str += 'mis\tSlack capacity(min)\n'
 
     # def add_config(self, from_time, until_time, config, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss32L, miss32R, mis18L, mis18R):
     #     self.config_str = self.config_str + "%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (from_time, until_time, config, '{:d}'.format(arr32L), '{:d}'.format(arr32R),
     #                    '{:d}'.format(dep36L), '{:d}'.format(dep36R),  '{:d}'.format(arr18L), '{:d}'.format(arr18R),
     #                    '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss32L), '{:d}'.format(miss32R), '{:d}'.format(mis18L), '{:d}'.format(mis18R))
     #     return self.config_str
-    def add_config(self, from_time, until_time, config, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss):
-        self.config_str = self.config_str + "%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
-        from_time, until_time, config, '{:d}'.format(arr32L), '{:d}'.format(arr32R),
+    def add_config(self, from_time, until_time, config, total, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss, slack):
+        self.config_str = self.config_str + "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
+        from_time, until_time, config, '{:d}'.format(total), '{:d}'.format(arr32L), '{:d}'.format(arr32R),
         '{:d}'.format(dep36L), '{:d}'.format(dep36R), '{:d}'.format(arr18L), '{:d}'.format(arr18R),
-        '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss))
+        '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss), '{:.2f}'.format(slack))
         return self.config_str
 
     def write(self):
@@ -605,10 +597,10 @@ class ConfigLog:
         first_epoch = None
         last_conf = None
         config = None
-        for final_guess in self.final_op_list:
-            if final_guess[3] is not None and final_guess[4] is not None:
-                first_epoch = final_guess[3]
-                if '32' in final_guess[4] or '36' in final_guess[4]:
+        for operation in self.final_op_list:
+            if operation.op_timestamp is not None and operation.val_operation_str:
+                first_epoch = operation.op_timestamp
+                if '32' in operation.val_operation_str or '36' in operation.val_operation_str:
                     last_conf = 'N'
                     config = 'N'
                 else:
@@ -617,20 +609,20 @@ class ConfigLog:
                 break
 
         from_time = time_string(first_epoch)
-        last_epoch = self.final_op_list[-1][3]
-        until_time = time_string(last_epoch)
+        last_epoch = self.final_op_list[-1].op_timestamp
         last_time = time_string(last_epoch)
 
-        prev_line = [0, 0, 0, 0, '']  # call, icao, type, timestamp, op
         counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]  # 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R...
+        total_count = 0
+        miss_count = 0
+        prev_timestamp = 0
+        prev_op = '-'
         log = False
-        for i, line in enumerate(self.final_op_list):
-            prev_timestamp = prev_line[3]
-            prev_op = prev_line[4] if len(prev_line[4]) < 4 else prev_line[4][0:6]
-            op_timestamp = line[3]
-            op = line[4] if len(line[4]) < 4 else line[4][0:6]
+        for operation in self.final_op_list:
+            op_timestamp = operation.op_timestamp
+            op = operation.val_operation_str
 
-            if op_timestamp is not None and op is not None and prev_op is not None:
+            if op_timestamp is not None and op and prev_op:
                 if '32' in op or '36' in op:  # now NORTH
                     if '18' in prev_op or '14' in prev_op:  # prev south
                         until_time = time_string(prev_timestamp)  # latest south op
@@ -648,22 +640,30 @@ class ConfigLog:
                         print 'change of configuration from north to south'
 
                 if log:
-                    self.add_config(from_time, until_time, config, counter[0], counter[1],
+                    slack = (op_timestamp - prev_timestamp) / 60.0
+                    self.add_config(from_time, until_time, config, total_count, counter[0], counter[1],
                                     counter[2], counter[3], counter[4], counter[5],
-                                    counter[6], counter[7], counter[8])
+                                    counter[6], counter[7], miss_count, slack)
                     counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    total_count = 0
+                    miss_count = 0
                     log = False
                     from_time = time_string(op_timestamp)  # first south op
 
                 try:
-                    counter[self.ops.index(op[-3:])] += 1
-                except:
+                    total_count += 1
+                    counter[self.ops.index(op)] += 1
+                    if 'missed' in operation.op_comment:
+                        miss_count += 1
+                except Exception:
                     pass
-                prev_line = line
 
-        self.add_config(from_time, last_time, last_conf, counter[0], counter[1],
+                prev_timestamp = operation.op_timestamp
+                prev_op = operation.val_operation_str
+
+        self.add_config(from_time, last_time, last_conf, total_count, counter[0], counter[1],
                         counter[2], counter[3], counter[4], counter[5],
-                        counter[6], counter[7], counter[8])
+                        counter[6], counter[7], miss_count, slack=0)
 
         with open(log_file_name, 'w') as config_log:
             config_log.write(self.config_str)
@@ -727,7 +727,7 @@ class Analyzer:
         global airport_altitude
         airport_altitude = 600
         global miss_event
-        miss_event = 'missed?'
+        miss_event = 'missed? '
         # self.op32R = '32R'
         # self.op32L = '32L'
         # self.op36R = '36R'
@@ -740,10 +740,8 @@ class Analyzer:
     def run(self, icao_filter):
         try:
             self.master_database = open(self.filepath, 'r')
-        except:
+        except Exception:
             raise NameError('No valid input path')
-
-        icao_filter = icao_filter
 
         if True:
             airport_poly = Polygon(((41.07961, -3.29377), (41.08127, -3.88696), (40.05861, -3.59719), (40.06891, -2.93164),
@@ -831,7 +829,7 @@ class Analyzer:
                 continue
 
             if icao0 not in self.icao_dict.keys():
-                self.icao_dict[icao0] = Aircraft(icao0, epoch_now)
+                self.icao_dict[icao0] = Aircraft(icao0, epoch_now, self.icao_database.get_type(icao0))
             current_aircraft = self.icao_dict[icao0]
             current_aircraft.last_seen = epoch_now
 
@@ -995,28 +993,17 @@ class Analyzer:
         self.master_database.close()
 
         # for all flights get validated_operation
-        final_op_list = []
+        final_operations_list = []
         for aircraft in self.icao_dict.values():
-            for flight in aircraft.flight_dict.values():  # TODO flight has several operations, return list of validations
+            for flight in aircraft.flight_dict.values():
                 for operation in flight.get_operations():
-                    if operation.val_operation_str is not None or operation.op_timestamp is not None:
-                        operation_str = operation.val_operation_str
-                        operation_comment = operation.op_comment
-                        op_timestamp = operation.op_timestamp
-                        avg_vrate = operation.get_mean_vrate()
-                        avg_inclin = operation.get_mean_inclin()
-                        avg_gs = operation.get_mean_gs()
-                        avg_op_track = operation.get_mean_track()
+                    if operation.val_operation_str or operation.op_timestamp is not None:
+                        final_operations_list.append(operation)
 
-                        if op_timestamp is not None:
-                            call = '{:<7}'.format(flight.call)
-                            typ = self.icao_database.get_type(aircraft.icao)
-                            final_op_list.append([call, aircraft.icao, typ, op_timestamp, str(operation_str), operation_comment, avg_vrate, avg_inclin, avg_gs, avg_op_track])
+        final_operations_list.sort()
 
-        final_op_list = sorted(final_op_list, key=itemgetter(3))  # in reverse time order
-
-        FlightsLog(os.path.dirname(self.filepath), self.master_name, final_op_list).write()
-        ConfigLog(os.path.dirname(self.filepath), self.master_name, final_op_list).write()
+        FlightsLog(os.path.dirname(self.filepath), self.master_name, final_operations_list).write()
+        ConfigLog(os.path.dirname(self.filepath), self.master_name, final_operations_list).write()
         # OpByType(os.path.dirname(self.filepath), self.master_name, final_op_list).write()
 
 
