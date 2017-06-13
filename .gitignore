@@ -7,3 +7,4 @@ target/
 /bin/
 /data/
 /utilities/
+resources/aircraft_db.csv

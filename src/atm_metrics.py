@@ -24,7 +24,7 @@ def time_string(epoch):
 
 class IcaoDatabase:
     '''loads the latest icao_database in memory for getting type or regist number'''
-
+    # TODO integrate the other database instead
     def __init__(self):
         self.icao_database = [[0, 0, 0, 0, 0, 0, 0]]
         with open('../resources/icao_database.txt', 'r') as icao_database:
@@ -178,6 +178,7 @@ class Operation:
         self.alt_ths_timestamp = None
         self.threshold = airport_altitude + 600  # m
         self.val_operation_str = ''
+        self.op_comment = ''
 
     def set_op_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time between guesses
@@ -265,7 +266,8 @@ class Operation:
                     side = 'L'
 
         if runway != '' and side != '':
-            guess_str = runway + side + event
+            guess_str = runway + side
+            self.op_comment = event
             # timestamp as close to zone 0, but not inside zone 0
             if 0 < zone < 4:
                 self.last_op_guess = epoch
@@ -399,7 +401,7 @@ class Flight:
         return
 
     def get_operations(self):
-        operation_list = []  # Operation
+        operation_list = []  # Operation TODO separate operation and comment
         if len(self.operations) == 1:
             operation_list.append(self.operations[0].validate_operation())  # one operation
         elif len(self.operations) > 1:  # several operations
@@ -409,15 +411,15 @@ class Flight:
                 if i > 0:
                     if prev_LorT == 'L' and validated_op.LorT == 'L':
                         # two consecuent attempts to land
-                        operation_list[i-1].val_operation_str = str(operation_list[i-1].val_operation_str) + ' (missed approach)'
+                        operation_list[i-1].op_comment += '(missed approach) '
                         if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
                             pass
                         else:
-                            validated_op.val_operation_str = str(validated_op.val_operation_str) + ' (second approach aft: ' +\
+                            validated_op.op_comment += '(second approach aft: ' +\
                                     '{:1.2f}'.format((validated_op.op_timestamp -
-                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min)'
+                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min) '
                     else:
-                        validated_op.val_operation_str = str(validated_op.val_operation_str) + ' (second operation)'
+                        validated_op.op_comment += '(second operation) '
 
                 operation_list.append(validated_op)
                 prev_LorT = validated_op.LorT
@@ -541,7 +543,7 @@ class Aircraft:
 
 class FlightsLog:
     '''writes into file the final_guess_list of the operation analysis'''
-    # final_op_list = [call, icao, typ, time_stamp, performance, avg_vrate, avg_inclin, avg_hspeed, avg_op_track]
+    # final_op_list = [call, icao, typ, time_stamp, performance, operation_comment, avg_vrate, avg_inclin, avg_hspeed, avg_op_track]
 
     def __init__(self, path, master_name, final_op_list):
         self.path = path
@@ -553,18 +555,18 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call   \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\n")
+            guess_log_file.write("call    \ticao  \ttype\top_timestamp\top_timestamp_date  \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\tcomment\n")
             for guess_line in self.final_op_list:
                 date = time_string(guess_line[3])
                 hour = time.gmtime(guess_line[3]).tm_hour
                 if hour - prev_hour > 0 or hour - prev_hour <= -23:
                     guess_log_file.write('\n')
                 try:
-                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                                         ('{:<7}'.format(guess_line[0]), '{:6}'.format(guess_line[1]),
-                                          '{:4}'.format(guess_line[2]), guess_line[3], date, '{:+05.0f}'.format(guess_line[5]),
-                                           '{:05.1f}'.format(guess_line[7]), '{:+04.1f}'.format(guess_line[6]),
-                                          '{:03.0f}'.format(guess_line[8]), guess_line[4]))
+                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                                         ('{:<8}'.format(guess_line[0]), '{:6}'.format(guess_line[1]),
+                                          '{:4}'.format(guess_line[2]), guess_line[3], date, '{:+05.0f}'.format(guess_line[6]),
+                                           '{:05.1f}'.format(guess_line[8]), '{:+04.1f}'.format(guess_line[7]),
+                                          '{:03.0f}'.format(guess_line[9]), guess_line[4], guess_line[5]))
                 except:
                     pass
                 prev_hour = hour
@@ -598,7 +600,7 @@ class ConfigLog:
         return self.config_str
 
     def write(self):
-        # final_op_list = [[call, icao, typ, timestamp, performance, vrate, incli, gs, track], []...]
+        # final_op_list = [[call, icao, typ, timestamp, performance, operation_comment, vrate, incli, gs, track], []...]
         log_file_name = '%s\\%s_configLog.txt' % (self.path, self.master_name)
         first_epoch = None
         last_conf = None
@@ -725,7 +727,7 @@ class Analyzer:
         global airport_altitude
         airport_altitude = 600
         global miss_event
-        miss_event = '_m?'
+        miss_event = 'missed?'
         # self.op32R = '32R'
         # self.op32L = '32L'
         # self.op36R = '36R'
@@ -999,6 +1001,7 @@ class Analyzer:
                 for operation in flight.get_operations():
                     if operation.val_operation_str is not None or operation.op_timestamp is not None:
                         operation_str = operation.val_operation_str
+                        operation_comment = operation.op_comment
                         op_timestamp = operation.op_timestamp
                         avg_vrate = operation.get_mean_vrate()
                         avg_inclin = operation.get_mean_inclin()
@@ -1008,7 +1011,7 @@ class Analyzer:
                         if op_timestamp is not None:
                             call = '{:<7}'.format(flight.call)
                             typ = self.icao_database.get_type(aircraft.icao)
-                            final_op_list.append([call, aircraft.icao, typ, op_timestamp, str(operation_str), avg_vrate, avg_inclin, avg_gs, avg_op_track])
+                            final_op_list.append([call, aircraft.icao, typ, op_timestamp, str(operation_str), operation_comment, avg_vrate, avg_inclin, avg_gs, avg_op_track])
 
         final_op_list = sorted(final_op_list, key=itemgetter(3))  # in reverse time order
 
