@@ -8,6 +8,7 @@ from operator import itemgetter
 import time
 from Tkinter import *
 import tkFileDialog
+import main_gui
 
 
 def time_string(epoch):
@@ -24,7 +25,6 @@ def time_string(epoch):
 
 class IcaoDatabase:
     '''loads the latest icao_database in memory for getting type or regist number'''
-    # TODO integrate the other database instead
     def __init__(self):
         self.icao_database = {}
         with open('../resources/aircraft_db.csv', 'r') as icao_database:
@@ -143,7 +143,7 @@ class Operation:
         self.op_timestamp = None
         self.pref = None
         self.alt_ths_timestamp = None
-        self.threshold = airport_altitude + 600  # m
+        self.threshold = 3000  # ft     airport_altitude + 600  # m
         self.val_operation_str = ''
         self.op_comment = ''
 
@@ -836,29 +836,29 @@ class Analyzer:
             current_aircraft.last_seen = epoch_now
 
             call = str(data[3]).strip()
-            if not call == '':  # call found in or outside airport.
+            if call:  # call found in or outside airport.
                 if call+icao0 not in self.call_icao_list:  # record call+icao0 if seen more than once
                     self.call_icao_list.append(call+icao0)
                 else:
                     current_aircraft.set_call(call, epoch_now)  # already fixes unknown call to op_timestamp
             current_flight = current_aircraft.get_current_flight(epoch_now)  # will be no_call flight if new
 
-            if not str(data[8]) == '' and not str(data[9]) == '' and not str(data[10]) == '':
+            if str(data[8]) and str(data[9]) and str(data[10]):
                 current_aircraft.set_new_vel(epoch_now, float(data[8]), float(data[9]), float(data[10]))
 
-            if not data[16] == '':  # kollsman found
+            if data[16]:  # kollsman found
                 current_aircraft.set_kolls(float(data[16]))
 
             pos = None
-            if not data[4] == '' and not data[5] == '':  # latitude information
+            if data[4] and data[5]:  # latitude information
                 lat = float(data[4])
                 lon = float(data[5])
                 FL = None
                 alt_uncorrected = None
-                if not data[6] == '':
+                if data[6]:
                     FL = float(data[6])
                     alt_uncorrected = FL * 30.48  # m, no QNH correction
-                elif not data[7] == '':  # should be "1"
+                elif data[7]:  # should be "1"
                     # # TODO include ground positions in analysis. If QNH not properly applied, a higher surface pos will make it think it was a missed apprach
                     # continue
                     alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
@@ -1049,6 +1049,7 @@ class GUI:
 
 
 if __name__ == '__main__':
+    main_gui.run()
     root = Tk()
     b = GUI(root)
     root.mainloop()
