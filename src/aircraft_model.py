@@ -1,4 +1,4 @@
-from p_tools import icao_database
+from p_tools import icao_database, time_string
 from core import no_call, miss_event
 
 
@@ -146,14 +146,14 @@ class Flight:
         self.operations[-1].set_op_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
         return
 
-    def get_operations(self):
+    def get_operations(self, epoch_now):
         operation_list = []  # Operation
         if len(self.operations) == 1:
-            operation_list.append(self.operations[0].validate_operation())  # one operation
+            operation_list.append(self.operations[0].validate_operation(epoch_now))  # one operation
         elif len(self.operations) > 1:  # several operations
             prev_LorT = ''
             for i in range(len(self.operations)):
-                validated_op = self.operations[i].validate_operation()
+                validated_op = self.operations[i].validate_operation(epoch_now)
                 if i > 0:
                     if prev_LorT == 'L' and validated_op.LorT == 'L':
                         # two consecutive attempts to land
@@ -401,6 +401,9 @@ class Operation:
 
         self.last_validation = epoch
         return self
+
+    def print_op(self):
+        print [self.flight.aircraft.icao, self.flight.call, time_string(self.op_timestamp), self.val_operation_str, self.op_comment]
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)
