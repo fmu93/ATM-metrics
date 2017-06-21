@@ -1049,7 +1049,7 @@ class GUI:
 
 
 if __name__ == '__main__':
-    main_gui.run()
+    # main_gui.run()
     root = Tk()
     b = GUI(root)
     root.mainloop()

@@ -2,29 +2,16 @@ import os
 import numpy as np
 from shapely.geometry import Polygon
 from shapely.geometry import Point
-from p_tools import time_string, IcaoDatabase
+from p_tools import time_string
+from core import airport_altitude, guess_alt_ths, icao_dict, call_icao_list
 from aircraft_model import Aircraft
 
 
 class Metrics:
 
-    def __init__(self, file):
-        self.filepath = file.name
-        self.master_name = os.path.splitext(os.path.basename(self.filepath))[0]
-        self.master_database = None
-        self.icao_database = IcaoDatabase()
-
-        self.icao_dict = {}  # [icao] Flight class
-        self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
-        self.guess_alt_ths = 1800  # [m] above airport to discard flyovers
+    def __init__(self):
         self.generic_current_diff = 0.0
 
-        global no_call
-        no_call = 'no_call'
-        global airport_altitude
-        airport_altitude = 600
-        global miss_event
-        miss_event = 'missed? '
         # self.op32R = '32R'
         # self.op32L = '32L'
         # self.op36R = '36R'
@@ -34,9 +21,12 @@ class Metrics:
         # self.op18R = '18R'
         # self.op18L = '18L'
 
-    def run(self, icao_filter):
+    def run(self, infile, icao_filter):
+        filepath = infile.name
+        master_name = os.path.splitext(os.path.basename(filepath))[0]
+
         try:
-            self.master_database = open(self.filepath, 'r')
+            database = open(filepath, 'r')
         except Exception:
             raise NameError('No valid input path')
 
@@ -103,7 +93,7 @@ class Metrics:
 
         print_time = True
         prev_epoch = 0
-        for i, master_line in enumerate(self.master_database):
+        for i, master_line in enumerate(database):
             if i == 0:  # skip header
                 continue
             data = master_line.split('\t')
@@ -125,16 +115,15 @@ class Metrics:
             if icao_filter is not None and icao0 != icao_filter:
                 continue
 
-            if icao0 not in self.icao_dict.keys():
-                self.icao_dict[icao0] = Aircraft(icao0, epoch_now,
-                                                 self.icao_database.get_type(icao0), self.icao_database.get_regid(icao0))
-            current_aircraft = self.icao_dict[icao0]
+            if icao0 not in icao_dict.keys():
+                icao_dict[icao0] = Aircraft(icao0, epoch_now)
+            current_aircraft = icao_dict[icao0]
             current_aircraft.last_seen = epoch_now
 
             call = str(data[3]).strip()
             if call:  # call found in or outside airport.
-                if call+icao0 not in self.call_icao_list:  # record call+icao0 if seen more than once
-                    self.call_icao_list.append(call+icao0)
+                if call+icao0 not in call_icao_list:  # record call+icao0 if seen more than once
+                    call_icao_list.append(call+icao0)
                 else:
                     current_aircraft.set_call(call, epoch_now)  # already fixes unknown call to op_timestamp
             current_flight = current_aircraft.get_current_flight(epoch_now)  # will be no_call flight if new
@@ -221,7 +210,7 @@ class Metrics:
                     elif poly_NW.contains(pos):
                         current_flight.set_guess(epoch_now, 'N', 'W', ttrack, vrate, inclin, gs, 4)
 
-                    if alt_uncorrected <= self.guess_alt_ths + airport_altitude:
+                    if alt_uncorrected <= guess_alt_ths + airport_altitude:
                         current_diff = current_aircraft.get_current_diff()
                         if current_diff is not None:
                             self.generic_current_diff = current_diff

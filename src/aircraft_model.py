@@ -1,8 +1,10 @@
-from p_tools import no_call, miss_event
+from p_tools import icao_database
+from core import no_call, miss_event
+
 
 class Aircraft:
 
-    def __init__(self, icao, first_seen, type, regid):
+    def __init__(self, icao, first_seen):
         self.icao = icao
         self.flight_dict = {}  # [call] Flight
         self.first_seen = first_seen
@@ -12,8 +14,8 @@ class Aircraft:
         self.set_call(no_call, first_seen)
         self.pos_buffer_dict = {}  # [epoch] records all positions but only few minutes before
         self.vel_buffer_dict = {}  # [epoch]
-        self.type = type
-        self.regid = regid
+        self.type = icao_database.get_type(self.icao)
+        self.regid = icao_database.get_regid(self.icao)
 
     def set_call(self, call, epoch):
         # check if this new call is the one of a prev aircraft that didn't send its call
@@ -154,7 +156,7 @@ class Flight:
                 validated_op = self.operations[i].validate_operation()
                 if i > 0:
                     if prev_LorT == 'L' and validated_op.LorT == 'L':
-                        # two consecuent attempts to land
+                        # two consecutive attempts to land
                         operation_list[i-1].op_comment += '(missed approach) '
                         if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
                             pass
@@ -178,6 +180,7 @@ class Operation:
         self.track_allow_landing = 25  # +- 25 degree to compare track
         self.track_allow_takeoff = 50
         self.last_op_guess = None
+        self.last_validation = None
         self.IorO = None  # In or Out of airport, Approach or Take-Off
         self.LorT = None  # basically same as IorO but only after validation
         self.min_times = 3
@@ -320,7 +323,7 @@ class Operation:
                 # second self.alt_ths_timestamp. TODO Evaluate prev and actual sign and half
                 pass
 
-    def validate_operation(self):
+    def validate_operation(self, epoch):
         north_zones = [None, None, None, None, None]  # [Zone0, ...]
         north_weight = 0.0  # all times of north zones 0-3
         delN4 = True
@@ -395,6 +398,8 @@ class Operation:
                 self.LorT = 'L'
             elif self.val_operation_str is not None and ('36' in self.val_operation_str or '14' in self.val_operation_str):
                 self.LorT = 'T'
+
+        self.last_validation = epoch
         return self
 
     def get_mean_vrate(self):

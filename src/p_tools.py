@@ -1,8 +1,5 @@
 import time
 
-no_call = 'no_call'
-miss_event = 'missed? '
-airport_altitude = 600
 
 def time_string(epoch):
     "turns epoch time into a string: yyyy-mm-dd hh:mm:ss"
@@ -34,3 +31,5 @@ class IcaoDatabase:
         if icao.upper() in self.icao_database.keys():
             return self.icao_database[icao.upper()][1]
 
+
+icao_database = IcaoDatabase()
