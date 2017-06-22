@@ -2,14 +2,13 @@
 
 # Form implementation generated from reading ui file 'main.ui'
 #
-# Created: Mon Jun 19 21:47:51 2017
+# Created: Wed Jun 21 19:33:56 2017
 #      by: PyQt5 UI code generator 5.3.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import atm_metrics
-
+import core
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -21,18 +20,22 @@ class Ui_Form(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.pushButton_2 = QtWidgets.QPushButton(Form)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.horizontalLayout.addWidget(self.pushButton_2)
-        self.label = QtWidgets.QLabel(Form)
-        self.label.setObjectName("label")
-        self.horizontalLayout.addWidget(self.label)
-        self.pushButton = QtWidgets.QPushButton(Form)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout.addWidget(self.pushButton)
+        self.btnRun = QtWidgets.QPushButton(Form)
+        self.btnRun.setObjectName("btnRun")
+        self.horizontalLayout.addWidget(self.btnRun)
+        self.btnStop = QtWidgets.QPushButton(Form)
+        self.btnStop.setObjectName("btnStop")
+        self.horizontalLayout.addWidget(self.btnStop)
         self.verticalLayout.addLayout(self.horizontalLayout)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.verticalLayout.addItem(spacerItem)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.tableWidget = QtWidgets.QTableWidget(Form)
+        self.tableWidget.setObjectName("tableWidget")
+        self.tableWidget.setColumnCount(0)
+        self.tableWidget.setRowCount(0)
+        self.horizontalLayout_3.addWidget(self.tableWidget)
         self.verticalLayout.addLayout(self.horizontalLayout_3)
         self.gridLayout_3.addLayout(self.verticalLayout, 0, 0, 1, 1)
 
@@ -42,10 +45,13 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Runway Allocation"))
-        self.pushButton_2.setText(_translate("Form", "PushButton"))
-        self.label.setText(_translate("Form", "TextLabel"))
-        self.pushButton.setText(_translate("Form", "PushButton"))
+        self.btnRun.setText(_translate("Form", "Run"))
+        self.btnStop.setText(_translate("Form", "Stop"))
+        self.btnRun.clicked.connect(self.run())
 
+    @QtCore.pyqtSlot()
+    def run(self):
+        core.run()
 
 def run():
     import sys

@@ -6,13 +6,13 @@ import time
 class FlightsLog:
     '''writes into file the final_guess_list of the operation analysis'''
 
-    def __init__(self, path, master_name, final_op_list):
+    def __init__(self, path, name, final_op_list):
         self.path = path
-        self.master_name = master_name
+        self.name = name
         self.final_op_list = final_op_list
 
     def write(self):
-        log_file_name = '%s\\%s_flightsLog.txt' % (self.path, self.master_name)
+        log_file_name = '%s\\%s_flightsLog.txt' % (self.path, self.name)
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:

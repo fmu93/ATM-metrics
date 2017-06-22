@@ -1,7 +1,7 @@
 import extract_data
 import main_gui
 import threading
-import time
+import analysis
 
 no_call = 'no_call'
 miss_event = 'missed? '
@@ -44,7 +44,7 @@ class OperationRefreshThread(threading.Thread):
     def __init__(self, dataExtractor):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
-        self._interval = 2
+        self._interval = 5
         self.dataExtractor = dataExtractor
         self.operation_dict = {}
 
@@ -67,20 +67,31 @@ class OperationRefreshThread(threading.Thread):
     def task(self):
         """The task done by this thread - override in subclasses"""
         print 'Refreshing ' + str(len(self.dataExtractor.icao_dict.keys()))
+        new_op_list = []
         for aircraft in self.dataExtractor.icao_dict.values():
             for flight in aircraft.flight_dict.values():
                 if len(flight.operations) > 0 and \
                                 flight.operations[-1].last_op_guess > flight.operations[-1].last_validation:
 
                     for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
-                        if operation.val_operation_str or operation.op_timestamp is not None:
+                        if operation.op_runway or operation.op_timestamp is not None:
                             # final_operations_list.append(operation)
-                            operation.print_op()
+                            self.operation_dict[operation] = operation
+                            new_op_list.append(operation)
+
+        new_op_list.sort()
+        for op in new_op_list:
+            op.print_op()
 
 
-if __name__ == '__main__':
+def write_analysis():  # TODO write results to file like before
+    # analysis.FlightsLog()
+    pass
 
-    infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090.hex')]
+
+def run():
+    infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090.hex'),
+               file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
 
     dataExtractor = DataExtractorThread(infiles)
     operationRefresh = OperationRefreshThread(dataExtractor)
@@ -89,6 +100,7 @@ if __name__ == '__main__':
     dataExtractorThread.start()
     operationRefreshThread.start()
 
+if __name__ == '__main__':
 
-    # main_gui.run()
-    # main_gui.Ui_Form.pushButton.clicked.connect(method)
+    main_gui.run()
+    # main_gui.Ui_Form.pushButton.clicked.connect(run())

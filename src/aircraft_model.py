@@ -1,5 +1,7 @@
 from p_tools import icao_database, time_string
 from core import no_call, miss_event
+from geo_resources import runway_ths_dict
+from geopy.distance import great_circle
 
 
 class Aircraft:
@@ -91,7 +93,7 @@ class Aircraft:
         self.current_kolls = kolls
 
     def get_current_diff(self):
-        current_diff = None
+        current_diff = 0
         if self.current_kolls is not None:
             current_diff = float(30 * (1013 - self.current_kolls))
         return current_diff
@@ -157,15 +159,15 @@ class Flight:
                 if i > 0:
                     if prev_LorT == 'L' and validated_op.LorT == 'L':
                         # two consecutive attempts to land
-                        operation_list[i-1].op_comment += '(missed approach) '
+                        operation_list[i-1].op_comment = '(first/2 approach) '
                         if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
                             pass
                         else:
-                            validated_op.op_comment += '(second approach aft: ' +\
+                            validated_op.op_comment = '(second approach aft: ' +\
                                     '{:1.2f}'.format((validated_op.op_timestamp -
                                                       operation_list[i - 1].op_timestamp) / 60.0) + ' min) '
                     else:
-                        validated_op.op_comment += '(second operation) '
+                        validated_op.op_comment = '(second operation) '
 
                 operation_list.append(validated_op)
                 prev_LorT = validated_op.LorT
@@ -193,8 +195,14 @@ class Operation:
         self.pref = None
         self.alt_ths_timestamp = None
         self.threshold = 3000  # ft     airport_altitude + 600  # m
-        self.val_operation_str = ''
+        self.op_runway = ''
         self.op_comment = ''
+        self.zone_change_comment = ''
+        self.miss_comment = ''
+        self.missed_detected = None
+        self.miss_inclin_ths = 1
+        self.miss_guess_count = 0
+        self.miss_guess_min = 3
 
     def __lt__(self, other):
         return self.op_timestamp < other.op_timestamp  # to be able to sort
@@ -250,9 +258,13 @@ class Operation:
                     side = 'L'
                 if UorD == 'D':
                     # normal 18 op
+                    self.miss_guess_count = 0
                     pass
-                elif inclin > -1 and 0 < zone < 3:
-                    event = miss_event  # TODO calculate distance to ths and elevation and this instant
+                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
+                    # TODO distance to ths and alt at moment of missed
+                    self.miss_guess_count += 1
+                    if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
+                        self.missed_detected = MissedApproach(self, epoch)
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
                 self.IorO = 'O'
@@ -273,9 +285,13 @@ class Operation:
                     side = 'R'
                 if UorD == 'D':
                     # normal 32 op
+                    self.miss_guess_count = 0
                     pass
-                elif inclin > -1 and 0 < zone < 3:
-                    event = miss_event
+                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
+                    # event = miss_event
+                    self.miss_guess_count += 1
+                    if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
+                        self.missed_detected = MissedApproach(self, epoch)
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
                 self.IorO = 'O'
                 runway = '14'
@@ -286,7 +302,6 @@ class Operation:
 
         if runway != '' and side != '':
             guess_str = runway + side
-            self.op_comment = event
             # timestamp as close to zone 0, but not inside zone 0
             if 0 < zone < 4:
                 self.last_op_guess = epoch
@@ -375,35 +390,36 @@ class Operation:
                     # landing
                     if zone.UorD == 'D':
                         if zone.guess_class.is_miss and 0 < zone.zone < 3:
-                            self.val_operation_str = guess_str
-                        if zone.zone > 0 and self.val_operation_str:
-                            if guess_str[0:2] == self.val_operation_str[0:2] and guess_str != self.val_operation_str:
+                            self.op_runway = guess_str
+                        if zone.zone > 0 and self.op_runway:
+                            if guess_str[0:2] == self.op_runway[0:2] and guess_str != self.op_runway:
                                 # next zone guess has same runway but not side (or event)
-                                self.op_comment += 'approach from ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                self.zone_change_comment += 'approach from ' + guess_str + ' at zone ' + str(zone.zone) + ' '
                                 break
-                        elif not self.val_operation_str and zone.zone < 4:
-                            self.val_operation_str = guess_str
+                        elif not self.op_runway and zone.zone < 4:
+                            self.op_runway = guess_str
                     # take off
                     elif zone.UorD == 'U':
                         if not zone.is_miss:  # take off
-                            if self.val_operation_str and guess_str not in self.val_operation_str:
-                                self.op_comment += 'departure towards ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                            if self.op_runway and guess_str not in self.op_runway:
+                                self.zone_change_comment += 'departure towards ' + guess_str + ' at zone ' + str(zone.zone) + ' '
                                 break  # TODO don't stack up performances
                             else:
-                                self.val_operation_str = guess_str
+                                self.op_runway = guess_str
                         elif zone.zone > 0:  # missed approach, but in zone 0 it gives trouble
-                            self.val_operation_str = guess_str
+                            self.op_runway = guess_str
 
-            if self.val_operation_str is not None and ('32' in self.val_operation_str or '18' in self.val_operation_str):
+            if self.op_runway is not None and ('32' in self.op_runway or '18' in self.op_runway):
                 self.LorT = 'L'
-            elif self.val_operation_str is not None and ('36' in self.val_operation_str or '14' in self.val_operation_str):
+            elif self.op_runway is not None and ('36' in self.op_runway or '14' in self.op_runway):
                 self.LorT = 'T'
 
         self.last_validation = epoch
         return self
 
     def print_op(self):
-        print [self.flight.aircraft.icao, self.flight.call, time_string(self.op_timestamp), self.val_operation_str, self.op_comment]
+        print [self.flight.aircraft.icao, self.flight.call, time_string(self.op_timestamp),
+               self.op_runway, self.zone_change_comment, self.op_comment, self.miss_comment]
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)
@@ -419,7 +435,6 @@ class Operation:
 
 
 class OpGuess:
-
     def __init__(self, guess_str, NorS, EorW, UorD, event):
         self.guess_str = guess_str
         self.NorS = NorS
@@ -460,7 +475,6 @@ class ZoneTimes:
 
 
 class Position:
-
     def __init__(self, lat, lon, alt, epoch):
         self.lat = lat
         self.lon = lon
@@ -475,3 +489,22 @@ class Velocity:
         self.gs = gs
         self.ttrack = ttrack
         self.epoch = epoch
+
+# TODO create runway class
+
+
+class MissedApproach:
+    def __init__(self, operation, epoch):
+        self.operation = operation
+        self.operation.validate_operation(epoch)
+        self.runway = self.operation.op_runway
+        self.position = self.operation.flight.aircraft.get_position_delimited(epoch, 0, 5)
+        self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff()
+        self.timestamp = epoch
+        self.dist_to_ths = None
+        for runway_ths_key in runway_ths_dict.keys():
+            if self.runway in runway_ths_key:
+                self.dist_to_ths = great_circle((self.position.lat, self.position.lon),
+                                                runway_ths_dict[runway_ths_key]).nautical
+        self.operation.miss_comment = '(missed @ ' + '{:1.0f}'.format(self.alt*100) + ' ft, ' +\
+                                      '{:1.2f}'.format(self.dist_to_ths) + ' nm from ths) '
