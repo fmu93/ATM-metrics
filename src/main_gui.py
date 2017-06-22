@@ -9,8 +9,13 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import core
+import sys
 
-class Ui_Form(object):
+
+class Ui_Form(QtWidgets.QWidget):
+    def __init__(self):
+        QtWidgets.QWidget.__init__(self)
+
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(702, 509)
@@ -23,6 +28,9 @@ class Ui_Form(object):
         self.btnRun = QtWidgets.QPushButton(Form)
         self.btnRun.setObjectName("btnRun")
         self.horizontalLayout.addWidget(self.btnRun)
+        self.btnWrite = QtWidgets.QPushButton(Form)
+        self.btnWrite.setObjectName("btnWrite")
+        self.horizontalLayout.addWidget(self.btnWrite)
         self.btnStop = QtWidgets.QPushButton(Form)
         self.btnStop.setObjectName("btnStop")
         self.horizontalLayout.addWidget(self.btnStop)
@@ -41,20 +49,39 @@ class Ui_Form(object):
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
+        core.coreClass.set_ui(self)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Runway Allocation"))
         self.btnRun.setText(_translate("Form", "Run"))
+        self.btnWrite.setText(_translate("Form", "Write"))
         self.btnStop.setText(_translate("Form", "Stop"))
-        self.btnRun.clicked.connect(self.run())
+        self.btnRun.clicked.connect(core.coreClass.run)
+        self.btnWrite.clicked.connect(core.coreClass.write_analysis)
+        self.btnStop.clicked.connect(self.close_application)
+        self.tableWidget.setColumnCount(13)
+        self.tableWidget.setRowCount(100)
 
-    @QtCore.pyqtSlot()
-    def run(self):
-        core.run()
+    def dataToTable(self, op_list):
+        for m, op in enumerate(op_list):
+            # self.tableWidget.setRowCount(m)
+            for n, item in enumerate(op.get_op_rows()):
+                newItem = QtWidgets.QTableWidgetItem(item)
+                self.tableWidget.setItem(m, n, newItem)
+        self.tableWidget.resizeColumnsToContents()
+
+    def close_application(self):
+        choice = QtWidgets.QMessageBox.question(self, 'Exit box', "Exit program?",
+                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+        if choice == QtWidgets.QMessageBox.Yes:
+            print('Bye!')
+            sys.exit()
+        else:
+            pass
+
 
 def run():
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     Form = QtWidgets.QWidget()
     ui = Ui_Form()

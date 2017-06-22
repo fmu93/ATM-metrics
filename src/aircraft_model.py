@@ -8,7 +8,7 @@ class Aircraft:
 
     def __init__(self, icao, first_seen):
         self.icao = icao
-        self.flight_dict = {}  # [call] Flight
+        self.flight_dict = {}  # [call] Flight TODO don't key by callsign, serialize
         self.first_seen = first_seen
         self.last_seen = None
         self.current_kolls = None
@@ -394,7 +394,7 @@ class Operation:
                         if zone.zone > 0 and self.op_runway:
                             if guess_str[0:2] == self.op_runway[0:2] and guess_str != self.op_runway:
                                 # next zone guess has same runway but not side (or event)
-                                self.zone_change_comment += 'approach from ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                self.zone_change_comment = 'approach from ' + guess_str + ' at zone ' + str(zone.zone) + ' '
                                 break
                         elif not self.op_runway and zone.zone < 4:
                             self.op_runway = guess_str
@@ -402,7 +402,7 @@ class Operation:
                     elif zone.UorD == 'U':
                         if not zone.is_miss:  # take off
                             if self.op_runway and guess_str not in self.op_runway:
-                                self.zone_change_comment += 'departure towards ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                self.zone_change_comment = 'departure towards ' + guess_str + ' at zone ' + str(zone.zone) + ' '
                                 break  # TODO don't stack up performances
                             else:
                                 self.op_runway = guess_str
@@ -417,9 +417,11 @@ class Operation:
         self.last_validation = epoch
         return self
 
-    def print_op(self):
-        print [self.flight.aircraft.icao, self.flight.call, time_string(self.op_timestamp),
-               self.op_runway, self.zone_change_comment, self.op_comment, self.miss_comment]
+    def get_op_rows(self):
+        return [self.flight.call, self.flight.aircraft.icao, self.flight.aircraft.type, '{:.0f}'.format(self.op_timestamp),
+                time_string(self.op_timestamp), '{:.0f}'.format(self.get_mean_vrate()), '{:.0f}'.format(self.get_mean_gs()),
+                '{:.1f}'.format(self.get_mean_inclin()), '{:.0f}'.format(self.get_mean_track()), self.op_runway,
+                self.zone_change_comment, self.miss_comment, self.op_comment]
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)

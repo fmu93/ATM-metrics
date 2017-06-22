@@ -16,19 +16,21 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tV(fpm)\tGS(kts)\t(deg)\ttrack\toperation\tcomment\n")
+            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tV(fpm)\tGS(kts)\t(deg)\t"\
+            "track\trunway\tchange_comment\tmiss_comment\top_comment\n")
             for operation in self.final_op_list:
                 date = time_string(operation.op_timestamp)
                 hour = time.gmtime(operation.op_timestamp).tm_hour
                 if hour - prev_hour > 0 or hour - prev_hour <= -23:
                     guess_log_file.write('\n')
                 try:
-                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                                          ('{:<8}'.format(operation.flight.call), '{:6}'.format(operation.flight.aircraft.icao),
                                           '{:4}'.format(operation.flight.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
                                           date, '{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
-                                          '{:03.0f}'.format(operation.get_mean_track()), operation.val_operation_str, operation.op_comment))
+                                          '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway, operation.zone_change_comment,
+                                          operation.miss_comment, operation.op_comment))
                 except Exception:
                     pass
                 prev_hour = hour
