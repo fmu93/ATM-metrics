@@ -10,8 +10,10 @@ class Metrics:
 
     def __init__(self, dataExtractor):
         self.generic_current_diff = 0.0
+        self.last_generic_diff = 0
         self.dataExtractor = dataExtractor
         self.epoch_now = 0
+        self.dead = False
 
         # self.op32R = '32R'
         # self.op32L = '32L'
@@ -36,6 +38,9 @@ class Metrics:
         for i, master_line in enumerate(database):
             if i == 0:  # skip header
                 continue
+            if self.dead:
+                break
+
             data = master_line.split('\t')
             self.epoch_now = float(data[0])
             icao0 = str(data[2])
@@ -72,7 +77,7 @@ class Metrics:
                 current_aircraft.set_new_vel(self.epoch_now, float(data[8]), float(data[9]), float(data[10]))
 
             if data[16]:  # kollsman found
-                current_aircraft.set_kolls(float(data[16]))
+                current_aircraft.set_kolls(float(data[16]), self.epoch_now)
 
             pos = None
             if data[4] and data[5]:  # latitude information
@@ -84,14 +89,12 @@ class Metrics:
                     FL = float(data[6])
                     alt_uncorrected = FL * 30.48  # m, no QNH correction
                 elif data[7]:  # should be "1"
-                    # TODO include ground positions in analysis. If QNH not properly applied, a higher surface pos will make it think it was a missed apprach
-                    # continue
                     alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
                     FL = 20
                 if FL is not None and FL < 130:  # FL130
                     pos = Point(lat, lon)
 
-            if pos is not None and TMA.contains(pos):  # TODO here filter for cointainment in SID/STAR
+            if pos is not None and TMA.contains(pos):  # TODO here filter for containment in SID/STAR
 
                 NorS = None
                 EorW = None
@@ -141,7 +144,7 @@ class Metrics:
                     #  \ C0 - \ D0
                     #   \ C1 - \ D1
 
-                    if poly_SE.contains(pos):  # only for approaches
+                    if poly_SE.contains(pos):  # will only be used for approaches
                         current_flight.set_guess(self.epoch_now, 'S', 'E', ttrack, vrate, inclin, gs, 4)
                     elif poly_SW.contains(pos):
                         current_flight.set_guess(self.epoch_now, 'S', 'W', ttrack, vrate, inclin, gs, 4)
@@ -151,13 +154,6 @@ class Metrics:
                         current_flight.set_guess(self.epoch_now, 'N', 'W', ttrack, vrate, inclin, gs, 4)
 
                     if alt_uncorrected <= guess_alt_ths + airport_altitude:
-                        current_diff = current_aircraft.get_current_diff()
-                        if current_diff is not None:
-                            self.generic_current_diff = current_diff
-                        else:  # TODO make timer for 30 min to make new generic_current_diff
-                            current_diff = self.generic_current_diff
-                        alt_corr = alt_uncorrected - current_diff
-
                         if poly_north.contains(pos):
                             NorS = 'N'
                             if poly_AA.contains(pos):
@@ -204,12 +200,24 @@ class Metrics:
                                     poly = 'D3'
 
                         if poly is not None:
+                            zone = int(poly[1])
+                            current_flight.set_guess(self.epoch_now, NorS, EorW, ttrack, vrate, inclin, gs, zone)
+
                             # here we set the alt_ths_operation timestamp
+                            if current_aircraft.last_kolls is not None and self.epoch_now - current_aircraft.last_kolls < 900:
+                                current_diff = current_aircraft.get_current_diff()
+                                if self.epoch_now - self.last_generic_diff > 600:
+                                    self.generic_current_diff = current_diff
+                                    self.last_generic_diff = self.epoch_now
+                            else:
+                                current_diff = self.generic_current_diff
+                            alt_corr = alt_uncorrected - current_diff
+
                             prev30_10_pos = current_aircraft.get_position_delimited(self.epoch_now, 10, 30)
                             if prev30_10_pos is not None:  # can happen there was no prev data
                                 prev_alt_corr = prev30_10_pos.alt - current_diff
                                 prev_epoch = prev30_10_pos.epoch
-                                # current_flight.operation.set_alt_ths_timestamp(epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
+                                current_flight.operations[-1].set_alt_ths_timestamp(self.epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
-                            zone = int(poly[1])
-                            current_flight.set_guess(self.epoch_now, NorS, EorW, ttrack, vrate, inclin, gs, zone)
+    def stop(self):
+        self.dead = True

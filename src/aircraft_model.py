@@ -1,17 +1,19 @@
 from p_tools import icao_database, time_string
-from core import no_call, miss_event
+from core import no_call, miss_event, airport_altitude
 from geo_resources import runway_ths_dict
 from geopy.distance import great_circle
+import time
 
 
 class Aircraft:
 
     def __init__(self, icao, first_seen):
         self.icao = icao
-        self.flight_dict = {}  # [call] Flight TODO don't key by callsign, serialize
+        self.flight_dict = {}  # [call] Flight TODO make it callsign_dict
         self.first_seen = first_seen
         self.last_seen = None
         self.current_kolls = None
+        self.last_kolls = None
         self.current_flight = None  # updated from set_call
         self.set_call(no_call, first_seen)
         self.pos_buffer_dict = {}  # [epoch] records all positions but only few minutes before
@@ -37,10 +39,13 @@ class Aircraft:
                 # was added for a while until it's previous call appears again. TODO merge no_call with prev/current call
                 # this can happen when ac sends call for the first time while docked and again more than half an
                 # hour later after take off, so it's ok to not merge in this case
-                # print self.icao + ' lost a call: ' + call + ' at ' + time_string(self.flight_dict[call].latest_time) + ' and is back at ' + time_string(epoch)
                 self.flight_dict.pop(no_call, None)  # remove key of unknown call
                 self.flight_dict[call].set_latest_time(epoch)
                 pass
+            elif time.gmtime(epoch).tm_mday != time.gmtime(self.flight_dict[call].latest_time).tm_mday:
+                # call of a different day, make new flight TODO don't key by call in flight_dict!
+                self.current_flight = Flight(call, self, epoch)
+                self.flight_dict[call] = self.current_flight
             else:
                 # there are no previous 'no call' flights, simply update current flight
                 self.flight_dict[call].set_latest_time(epoch)
@@ -56,7 +61,6 @@ class Aircraft:
                 # there are no previous 'no call' flights before this new call
                 self.current_flight = Flight(call, self, epoch)
                 self.flight_dict[call] = self.current_flight
-            # print self.icao + ' has new flight call: ' + call + ' at ' + time_string(epoch)
 
     def get_current_flight(self, epoch):
         # method called only when aircraft inside TMA (airport vicinity)
@@ -89,8 +93,9 @@ class Aircraft:
                     call = key
         return call
 
-    def set_kolls(self, kolls):
+    def set_kolls(self, kolls, epoch):
         self.current_kolls = kolls
+        self.last_kolls = epoch
 
     def get_current_diff(self):
         current_diff = 0
@@ -121,13 +126,30 @@ class Aircraft:
                 return self.vel_buffer_dict[key]
 
 
-class Flight:
+class CallSign:  # TODO hierarchy -> aircraft has callsigns has flights has operations
+    def __init__(self, call, aircraft, epoch):
+        self.aircraft = aircraft
+        self.call = call
+        self.latest_time = epoch
+        self.flight_dict = {}  # a new one for each day. Key by day? time?
 
+    def set_flight(self, epoch):
+        self.flight_dict[time.gmtime(epoch).tm_mday] = Flight(self, epoch)
+
+    def get_current_flight(self):
+        if self.flight_dict.keys():
+            return self.flight_dict.values().sort()[-1]
+
+
+class Flight:
     def __init__(self, call, aircraft, epoch):
         self.aircraft = aircraft
         self.call = call
         self.latest_time = epoch
         self.operations = []  # [Operation()]
+
+    def __lt__(self, other):
+        return self.latest_time < other.latest_time  # to be able to sort
 
     def set_latest_time(self, epoch):
         self.latest_time = epoch
@@ -138,7 +160,7 @@ class Flight:
             # more than 10 minutes with no calls and new guess is showing up, make new 'no_call' flight
             self.aircraft.set_call(no_call, epoch)
             # don't forget to assign this new guess to the new flight
-            # self.aircraft.get_current_flight().set_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
+            self.aircraft.get_current_flight(epoch).set_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
             return
 
         if not len(self.operations) > 0 or (len(self.operations) > 0 and
@@ -193,8 +215,8 @@ class Operation:
 
         self.op_timestamp = None
         self.pref = None
-        self.alt_ths_timestamp = None
-        self.threshold = 3000  # ft     airport_altitude + 600  # m
+        self.alt_ths_timestamp = 0
+        self.threshold = airport_altitude + 800  # [m]     airport_altitude + 600  # m
         self.op_runway = ''
         self.op_comment = ''
         self.zone_change_comment = ''
@@ -323,20 +345,24 @@ class Operation:
         elif self.IorO == 'I':
             self.op_timestamp = epoch
 
-    def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):  # TODO define timestamp per runway
-        sign = None
-        if alt > self.threshold > prev_alt:
-            sign = 0  # up
-        elif alt < self.threshold < prev_alt:
-            sign = 1  # dq
-        if sign is not None:
-            if self.alt_ths_timestamp is None:
-                self.alt_ths_timestamp = round(prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
-                # self.sign = sign
-                # self.half = half
-            else:
-                # second self.alt_ths_timestamp. TODO Evaluate prev and actual sign and half
-                pass
+    def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
+        if alt > self.threshold > prev_alt or alt < self.threshold < prev_alt:
+            self.alt_ths_timestamp = round(
+                prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
+
+        # sign = None
+        # if alt > self.threshold > prev_alt:
+        #     sign = 0  # up
+        # elif alt < self.threshold < prev_alt:
+        #     sign = 1  # dq
+        # if sign is not None:
+        #     if self.alt_ths_timestamp is None:
+        #         self.alt_ths_timestamp = round(prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
+        #         # self.sign = sign
+        #         # self.half = half
+        #     else:
+        #         # second self.alt_ths_timestamp. TODO Evaluate prev and actual sign and half
+        #         pass
 
     def validate_operation(self, epoch):
         north_zones = [None, None, None, None, None]  # [Zone0, ...]

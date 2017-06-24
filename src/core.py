@@ -5,7 +5,7 @@ import analysis
 
 no_call = 'no_call'
 miss_event = 'missed? '
-airport_altitude = 600
+airport_altitude = 600  # [m]
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
 horHeaders = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','V(fpm)','GS(kts)','(deg)',
               'track','runway','change_comment','miss_comment','op_comment']
@@ -29,6 +29,7 @@ class DataExtractorThread(threading.Thread):
     def shutdown(self):
         """Stop this thread"""
         self._finished.set()
+        self.extract_data.stop()
 
     def run(self):
         while 1:
@@ -118,9 +119,9 @@ class Core:
         try:
             self.dataExtractor.shutdown()
             self.operationRefresh.shutdown()
-            print 'killed!'
+            print 'threads killed!'
         except Exception:
-            raise NameError('Can\'t kill threads')
+            print 'Can\'t kill threads'
 
     def set_ui(self, ui):
         self.ui = ui
