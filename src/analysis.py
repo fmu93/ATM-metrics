@@ -25,14 +25,14 @@ class FlightsLog:
                     guess_log_file.write('\n')
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                                         ('{:<8}'.format(operation.flight.call), '{:6}'.format(operation.flight.aircraft.icao),
-                                          '{:4}'.format(operation.flight.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
+                                         ('{:<8}'.format(operation.flight.callsign.call), '{:6}'.format(operation.flight.callsign.aircraft.icao),
+                                          '{:4}'.format(operation.flight.callsign.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
                                           date, '{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
                                           '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway, operation.zone_change_comment,
                                           operation.miss_comment, operation.op_comment))
                 except Exception:
-                    pass
+                    print 'Error in logging!!'
                 prev_hour = hour
 
 

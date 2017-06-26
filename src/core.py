@@ -19,7 +19,8 @@ class DataExtractorThread(threading.Thread):
     def __init__(self, infiles, ui):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
-        self.daemon = True
+        self.setDaemon(True)
+        self.setName("DataExtractorThread")
         self.infiles = infiles
         self.ui = ui
         self.icao_dict = {}
@@ -50,7 +51,8 @@ class OperationRefreshThread(threading.Thread):
     def __init__(self, dataExtractor, ui):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
-        self.daemon = True
+        self.setDaemon(True)
+        self.setName("OperationRefreshThread")
         self._interval = 3
         self.ui = ui
         self.dataExtractor = dataExtractor
@@ -77,15 +79,16 @@ class OperationRefreshThread(threading.Thread):
         print 'Refreshing ' + str(len(self.operation_dict.keys()))
         new_op_list = []
         for aircraft in self.dataExtractor.icao_dict.values():
-            for flight in aircraft.flight_dict.values():
-                if len(flight.operations) > 0 and \
-                                flight.operations[-1].last_op_guess > flight.operations[-1].last_validation:
+            for callsign in aircraft.callsign_dict.values():
+                for flight in callsign.flight_dict.values():
+                    if len(flight.operations) > 0 and \
+                                    flight.operations[-1].last_op_guess > flight.operations[-1].last_validation:
 
-                    for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
-                        if operation.op_runway or operation.op_timestamp is not None:
-                            # final_operations_list.append(operation)
-                            self.operation_dict[operation] = operation
-                            new_op_list.append(operation)
+                        for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
+                            if operation.op_runway or operation.op_timestamp is not None:
+                                # final_operations_list.append(operation)
+                                self.operation_dict[operation] = operation
+                                new_op_list.append(operation)
         self.display()
         new_op_list.sort()
         for op in new_op_list:
