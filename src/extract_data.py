@@ -53,6 +53,7 @@ class Metrics:
             if self.epoch_now % 3600 == 0:
                 if print_time:
                     print time_string(self.epoch_now) + ' ...'
+                    self.dataExtractor.dispTime(time_string(self.epoch_now))
                     print_time = False
             else:
                 print_time = True
@@ -92,9 +93,13 @@ class Metrics:
                     alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
                     FL = 20
                 if FL is not None and FL < 130:  # FL130
-                    pos = Point(lat, lon)
+                    pos = Point(lon, lat)
 
             if pos is not None and TMA.contains(pos):  # TODO here filter for containment in SID/STAR
+
+                for waypoint in waypoint_dict.keys():
+                    if waypoint_dict[waypoint].contains(pos):
+                        current_flight.set_waypoint(waypoint)
 
                 NorS = None
                 EorW = None
@@ -117,24 +122,6 @@ class Metrics:
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
                     found_data = True
-
-                # if prev20_5_pos is not None:
-                #     diff = epoch_now - prev20_5_pos.epoch
-                #     if 5.0 <= diff <= 20:  # min-max difference to obtain values
-                #         vrate_intpl = (alt_uncorrected - prev20_5_pos.alt) / diff  # [m/s]
-                #         vec = [lat - prev20_5_pos.lat, lon - prev20_5_pos.lon]
-                #         hspeed = great_circle((lat, lon), (prev20_5_pos.lat, prev20_5_pos.lon)).meters / diff  # [m/s]
-                #         track = math.atan2(-vec[1], vec[0])  # -pi to +pi
-                #         inclin = np.rad2deg(np.arctan(vrate_intpl / hspeed))
-                #         if track < 0:
-                #             track += 2 * np.pi
-                #         track = np.rad2deg(2 * np.pi - track) % 360
-                #         # self.holding.set_track(call, icao0, track, epoch_now)  # INCOMPLETE CLASS!
-                #         if vrate_intpl > 0:
-                #             UorD = 'U'
-                #         else:
-                #             UorD = 'D'
-                #         found_data = True
 
                 if airport_poly.contains(pos) and found_data:
 

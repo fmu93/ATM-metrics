@@ -37,6 +37,8 @@ class Ui_Form(QtWidgets.QWidget):
         self.btnQuit = QtWidgets.QPushButton(Form)
         self.btnQuit.setObjectName("btnQuit")
         self.horizontalLayout.addWidget(self.btnQuit)
+        self.lblTime = QtWidgets.QLabel(Form)
+        self.horizontalLayout.addWidget(self.lblTime)
         self.verticalLayout.addLayout(self.horizontalLayout)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self.verticalLayout.addItem(spacerItem)
@@ -62,11 +64,12 @@ class Ui_Form(QtWidgets.QWidget):
         self.btnWrite.setText(_translate("Form", "Write"))
         self.btnStop.setText(_translate("Form", "Stop"))
         self.btnQuit.setText(_translate("Form", "Quit"))
+        self.lblTime.setText(_translate("dashboard", "...", None))
         self.btnRun.clicked.connect(core.coreClass.run)
         self.btnWrite.clicked.connect(core.coreClass.write_analysis)
         self.btnStop.clicked.connect(core.coreClass.stop)
         self.btnQuit.clicked.connect(self.close_application)
-        self.tableWidget.setColumnCount(13)
+        self.tableWidget.setColumnCount(14)
         self.tableWidget.setRowCount(100)
 
     def set_palette(self):
@@ -93,6 +96,9 @@ class Ui_Form(QtWidgets.QWidget):
                 self.tableWidget.setItem(m, n, newItem)
         self.tableWidget.resizeColumnsToContents()
 
+    def changeClock(self, timeStr):
+        self.lblTime.setText(timeStr)
+
     def closeEvent(self, QCloseEvent):
         QCloseEvent.ignore()
         self.close_application()
@@ -101,8 +107,8 @@ class Ui_Form(QtWidgets.QWidget):
         choice = QtWidgets.QMessageBox.question(self, 'Exit box', "Exit program?",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
-            print('Bye!')
             core.coreClass.stop()
+            print('Bye!')
             sys.exit()
         else:
             pass

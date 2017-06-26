@@ -8,7 +8,7 @@ miss_event = 'missed? '
 airport_altitude = 600  # [m]
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
 horHeaders = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','V(fpm)','GS(kts)','(deg)',
-              'track','runway','change_comment','miss_comment','op_comment']
+              'track','runway','change_comment','miss_comment','op_comment', 'waypoints']
 
 
 # output parameters
@@ -33,9 +33,8 @@ class DataExtractorThread(threading.Thread):
         self.extract_data.stop()
 
     def run(self):
-        while 1:
-            if self._finished.isSet(): return
-            self.task()
+        if self._finished.isSet(): return
+        self.task()
 
     def task(self):
         # TODO list and order input files to feed the extract_data.py
@@ -43,6 +42,9 @@ class DataExtractorThread(threading.Thread):
         for infile in self.infiles:
             print infile.name
             self.extract_data.run(infile, None)
+
+    def dispTime(self, timeStr):
+        self.ui.changeClock(timeStr)
 
 
 class OperationRefreshThread(threading.Thread):
@@ -107,8 +109,8 @@ class Core:
         self.dataExtractor = None
         self.operationRefresh = None
         self.ui = None
-        self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090.hex'),
-                   file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
+        self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')]
+            # ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
 
     def run(self):
         self.dataExtractor = DataExtractorThread(self.infiles, self.ui)

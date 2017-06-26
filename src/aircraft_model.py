@@ -1,12 +1,11 @@
 from p_tools import icao_database, time_string
-from core import no_call, miss_event, airport_altitude
+from core import no_call, airport_altitude
 from geo_resources import runway_ths_dict
 from geopy.distance import great_circle
 import time
 
 
 class Aircraft:
-
     def __init__(self, icao, first_seen):
         self.icao = icao
         self.callsign_dict = {}  # [call] CallSign
@@ -41,7 +40,7 @@ class Aircraft:
                 self.callsign_dict[call].set_latest_time(epoch)
 
             elif time.gmtime(epoch).tm_mday != time.gmtime(self.callsign_dict[call].last_seen).tm_mday:
-                # call of a different day, make new callsign
+                # call of a different day, make new callsign TODO overwrite prev callsign class?
                 self.callsign_dict[call] = CallSign(call, self, epoch)
             else:
                 # there are no previous 'no call' callsigns, simply update current callsign
@@ -157,6 +156,7 @@ class Flight:
         self.callsign = callsign
         self.last_seen = epoch
         self.operations = []  # [Operation()]
+        self.waypoints = []  # [['waypont_name', epoch], ...]
 
     def __lt__(self, other):
         return self.last_seen < other.last_seen  # to be able to sort
@@ -205,6 +205,10 @@ class Flight:
                 operation_list.append(validated_op)
                 prev_LorT = validated_op.LorT
         return operation_list
+
+    def set_waypoint(self, waypoint):
+        if waypoint not in self.waypoints:
+            self.waypoints.append(waypoint)
 
 
 class Operation:
@@ -459,7 +463,7 @@ class Operation:
                 '{:.0f}'.format(self.op_timestamp),
                 time_string(self.op_timestamp), '{:.0f}'.format(self.get_mean_vrate()), '{:.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,
-                self.zone_change_comment, self.miss_comment, self.op_comment]
+                self.zone_change_comment, self.miss_comment, self.op_comment, ', '.join(self.flight.waypoints)]
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)
