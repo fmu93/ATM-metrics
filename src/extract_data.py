@@ -72,7 +72,7 @@ class Metrics:
                     self.dataExtractor.call_icao_list.append(call+icao0)
                 else:
                     current_aircraft.set_call(call, self.epoch_now)  # already fixes unknown call to op_timestamp
-            current_flight = current_aircraft.get_current_callsign().get_current_flight()  # will be no_call flight if new
+            current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
 
             if str(data[8]) and str(data[9]) and str(data[10]):
                 current_aircraft.set_new_vel(self.epoch_now, float(data[8]), float(data[9]), float(data[10]))

@@ -81,8 +81,7 @@ class OperationRefreshThread(threading.Thread):
         print 'Refreshing ' + str(len(self.operation_dict.keys()))
         new_op_list = []
         for aircraft in self.dataExtractor.icao_dict.values():
-            for callsign in aircraft.callsign_dict.values():
-                for flight in callsign.flight_dict.values():
+                for flight in aircraft.flights_dict.values():
                     if len(flight.operations) > 0 and \
                                     flight.operations[-1].last_op_guess > flight.operations[-1].last_validation:
 
