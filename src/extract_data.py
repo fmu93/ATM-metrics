@@ -95,7 +95,7 @@ class Metrics:
                 if FL is not None and FL < 130:  # FL130
                     pos = Point(lon, lat)
 
-            if pos is not None and TMA.contains(pos):  # TODO here filter for containment in SID/STAR
+            if pos is not None and TMA.contains(pos):
 
                 for waypoint in waypoints_dict.keys():
                     if waypoints_dict[waypoint].contains(pos):

@@ -100,7 +100,7 @@ class OperationRefreshThread(threading.Thread):
         for op in new_op_list:
             print op.get_op_rows()
 
-    def display(self):
+    def display(self):  # TODO display config
         op_list = []
         for op in (self.operation_dict.values()):
             op_list.append(op)
@@ -113,16 +113,18 @@ class Core:
         self.dataExtractor = None
         self.operationRefresh = None
         self.ui = None
-        self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')
-            ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
+        self.infiles = None
+        # self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')
+        #     ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
 
     def run(self):
-        self.dataExtractor = DataExtractorThread(self.infiles, self)
-        self.operationRefresh = OperationRefreshThread(self.dataExtractor, self)
-        dataExtractorThread = threading.Thread(target=self.dataExtractor.run, args=())
-        operationRefreshThread = threading.Thread(target=self.operationRefresh.run, args=())
-        dataExtractorThread.start()
-        operationRefreshThread.start()
+        if self.infiles:
+            self.dataExtractor = DataExtractorThread(self.infiles, self)
+            self.operationRefresh = OperationRefreshThread(self.dataExtractor, self)
+            dataExtractorThread = threading.Thread(target=self.dataExtractor.run, args=())
+            operationRefreshThread = threading.Thread(target=self.operationRefresh.run, args=())
+            dataExtractorThread.start()
+            operationRefreshThread.start()
 
     def stop(self):
         try:
@@ -137,7 +139,7 @@ class Core:
         self.ui.tableWidget.setHorizontalHeaderLabels(horHeaders)
         self.ui.tableWidget.resizeColumnsToContents()
 
-    def write_analysis(self):  # TODO write results to file like before
+    def write_analysis(self):
         op_list = []
         for op in self.operationRefresh.operation_dict.values():
             op_list.append(op)

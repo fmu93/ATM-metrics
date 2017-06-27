@@ -1,7 +1,8 @@
-from p_tools import icao_database, time_string
+from p_tools import icao_database, time_string, sortedDictKeys
 from core import no_call, airport_altitude
 from geo_resources import runway_ths_dict
 from geopy.distance import great_circle
+import operator
 import time
 
 
@@ -24,8 +25,7 @@ class Aircraft:
             self.flights_dict[Callsign(self, new_call, epoch)] = Flight(new_call, self, epoch)
             return
 
-        # self.flights_dict.keys().sort()  # TODO check effect of sort... does it matter?
-        current_callsign = self.flights_dict.keys()[-1]  # latest callsign
+        current_callsign = sortedDictKeys(self.flights_dict)[-1]
 
         if current_callsign.call == new_call:
             # new call already in flight_dict.keys(). Same or new flight?
@@ -59,64 +59,9 @@ class Aircraft:
             # simply a new different call
             self.flights_dict[Callsign(self, new_call, epoch)] = Flight(new_call, self, epoch)
 
-        # # check if this new call is the one of a prev aircraft that didn't send its call
-        # if new_call == no_call:
-        #     # current callsign is 'no_call'
-        #     if no_call in self.flights_dict.keys():
-        #         # 'no call' callsign existed already, update it
-        #         self.flights_dict[call].set_last_seen(epoch)
-        #     else:
-        #         # new 'no call' callsign
-        #         self.flights_dict[call] = Flight(call, self, epoch)
-        # elif call in self.flights_dict.keys():
-        #     # call already seen before
-        #     if no_call in self.flights_dict.keys():
-        #         # No data for a few minutes, then aircraft is back but doesn't have a recent call so 'no call'
-        #         # was added for a while until it's previous call appears again. TODO merge no_call with prev/current call
-        #         # this can happen when ac sends call for the first time while docked and again more than half an
-        #         # hour later after take off, so it's ok to not merge in this case
-        #         self.flights_dict.pop(no_call, None)  # remove key of unknown call
-        #         self.flights_dict[call].set_last_seen(epoch)
-        #
-        #     elif time.gmtime(epoch).tm_mday != time.gmtime(self.flights_dict[call].last_seen).tm_mday:
-        #         # call of a different day, make new callsign TODO overwrite prev callsign class?
-        #         self.flights_dict[call] = Flight(call, self, epoch)
-        #     else:
-        #         # there are no previous 'no call' callsigns, simply update current callsign
-        #         self.flights_dict[call].set_last_seen(epoch)
-        # else:
-        #     # new call
-        #     if no_call in self.flights_dict.keys():
-        #         # replace old 'no call' with new call TODO check time difference (don't update a very old 'no call')
-        #         self.flights_dict[call] = self.flights_dict[no_call]
-        #         self.flights_dict[call].call = call
-        #         self.flights_dict.pop(no_call, None)  # remove key of unknown call
-        #         self.flights_dict[call].set_last_seen(epoch)
-        #     else:
-        #         # there are no previous 'no call' callsigns before this new call
-        #         self.flights_dict[call] = Flight(call, self, epoch)
-
     def get_current_flight(self):
-        # # method called only when aircraft inside TMA (airport vicinity)
-        # # returns new flight 'no_call' if this aircraft had no call for several minutes
-        # latest_epoch = 0
-        # flight = None
-        # for key in self.callsign_dict:
-        #     # get latest of all calls. Could be 'no_call'
-        #     if latest_epoch <= self.callsign_dict[key].latest_time <= epoch:
-        #         latest_epoch = self.callsign_dict[key].latest_time
-        #         # last seen within 20 minutes?
-        #         if epoch - 1200 <= latest_epoch:
-        #             flight = self.callsign_dict[key]
-        #
-        # if flight is None:
-        #     self.set_call(no_call, epoch)
-        #     flight = self.callsign_dict[no_call]
-        #
-        # return flight
         if self.flights_dict.keys():
-            self.flights_dict.values().sort()
-            return self.flights_dict.values()[-1]
+            return self.flights_dict[sortedDictKeys(self.flights_dict)[-1]]
 
     def set_kolls(self, kolls, epoch):
         self.current_kolls = kolls
@@ -241,7 +186,7 @@ class Operation:
         self.LorT = None  # basically same as IorO but only after validation
         self.guess_count = 0
         self.min_times = 3
-        self.vrate_list = []  # TODO vrate per op only or evaluate throughout zones?
+        self.vrate_list = []
         self.inclin_list = []
         self.gs_list = []
         self.track_list = []
@@ -316,7 +261,7 @@ class Operation:
                     self.miss_guess_count = 0
                     pass
                 elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
-                    # TODO distance to ths and alt at moment of missed
+                    # TODO distance to ths and alt at moment of missed... store first and wait until miss_count
                     self.miss_guess_count += 1
                     if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch)
@@ -552,8 +497,6 @@ class Velocity:
         self.gs = gs
         self.ttrack = ttrack
         self.epoch = epoch
-
-# TODO create runway class
 
 
 class MissedApproach:

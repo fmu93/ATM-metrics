@@ -66,43 +66,43 @@ wyp_radius = 0.1
 
 point_WYP_CASTEJON = Point((-2.54461, 40.37195))
 poly_WYP_CASTEJON = point_WYP_CASTEJON.buffer(wyp_radius)
-waypoints_dict['CASTEJON'] = poly_WYP_CASTEJON
+waypoints_dict['CJN'] = poly_WYP_CASTEJON
 
 point_WYP_PERALES = Point((-3.34820, 40.25223))
 poly_WYP_PERALES = point_WYP_PERALES.buffer(wyp_radius)
-waypoints_dict['PERALES'] = poly_WYP_PERALES
+waypoints_dict['PDT'] = poly_WYP_PERALES
 
 point_WYP_NAVAS = Point((-4.24741, 40.36867))
 poly_WYP_NAVAS = point_WYP_NAVAS.buffer(wyp_radius)
-waypoints_dict['NAVAS'] = poly_WYP_NAVAS
+waypoints_dict['NVS'] = poly_WYP_NAVAS
 
 point_WYP_VILLATOBAS = Point((-3.46860, 39.77804))
 poly_WYP_VILLATOBAS = point_WYP_VILLATOBAS.buffer(wyp_radius)
-waypoints_dict['VILLATOBAS'] = poly_WYP_VILLATOBAS
+waypoints_dict['VTB'] = poly_WYP_VILLATOBAS
 
 point_WYP_ROBLEDILLO = Point((-3.24728, 40.85277))
 poly_WYP_ROBLEDILLO = point_WYP_ROBLEDILLO.buffer(wyp_radius)
-waypoints_dict['ROBLEDILLO'] = poly_WYP_ROBLEDILLO
+waypoints_dict['RBO'] = poly_WYP_ROBLEDILLO
 
 point_WYP_SOMOSIERRA = Point((-3.60816, 41.15260))
 poly_WYP_SOMOSIERRA = point_WYP_SOMOSIERRA.buffer(wyp_radius)
-waypoints_dict['SOMOSIERRA'] = poly_WYP_SOMOSIERRA
+waypoints_dict['SIE'] = poly_WYP_SOMOSIERRA
 
 point_WYP_COLMENAR_VIEJO = Point((-3.73534, 40.64548))
 poly_WYP_COLMENAR_VIEJO = point_WYP_COLMENAR_VIEJO.buffer(wyp_radius)
-waypoints_dict['COLMENAR_VIEJO'] = poly_WYP_COLMENAR_VIEJO
+waypoints_dict['CNR'] = poly_WYP_COLMENAR_VIEJO
 
 point_WYP_TOLEDO = Point((-4.33705, 39.96818))
 poly_WYP_TOLEDO = point_WYP_TOLEDO.buffer(wyp_radius)
-waypoints_dict['TOLEDO'] = poly_WYP_TOLEDO
+waypoints_dict['TLD'] = poly_WYP_TOLEDO
 
 point_WYP_SALAMANCA = Point((-5.45569, 41.01655))
 poly_WYP_SALAMANCA = point_WYP_SALAMANCA.buffer(wyp_radius)
-waypoints_dict['SALAMANCA'] = poly_WYP_SALAMANCA
+waypoints_dict['BBI'] = poly_WYP_SALAMANCA
 
 point_WYP_ZAMORA = Point((-5.63972, 41.53014))
 poly_WYP_ZAMORA = point_WYP_ZAMORA.buffer(wyp_radius)
-waypoints_dict['ZAMORA'] = poly_WYP_ZAMORA
+waypoints_dict['ZMR'] = poly_WYP_ZAMORA
 
 point_WYP_ORBIS = Point((-4.19628, 41.26455))
 poly_WYP_ORBIS = point_WYP_ORBIS.buffer(wyp_radius)
@@ -130,7 +130,7 @@ waypoints_dict['EREMA'] = poly_WYP_EREMA
 
 point_WYP_TABANERA = Point((-4.10819, 42.02782))
 poly_WYP_TABANERA = point_WYP_TABANERA.buffer(wyp_radius)
-waypoints_dict['TABANERA'] = poly_WYP_TABANERA
+waypoints_dict['NEA'] = poly_WYP_TABANERA
 
 point_WYP_LALPI = Point((-3.70249, 40.95951))
 poly_WYP_LALPI = point_WYP_LALPI.buffer(wyp_radius)
@@ -174,7 +174,7 @@ waypoints_dict['PINAR'] = poly_WYP_PINAR
 
 point_WYP_BARAHONA = Point((-2.62984, 41.32356))
 poly_WYP_BARAHONA = point_WYP_BARAHONA.buffer(wyp_radius)
-waypoints_dict['BARAHONA'] = poly_WYP_BARAHONA
+waypoints_dict['BAN'] = poly_WYP_BARAHONA
 
 point_WYP_TAGOM = Point((-3.43177, 40.98377))
 poly_WYP_TAGOM = point_WYP_TAGOM.buffer(wyp_radius)
@@ -190,7 +190,7 @@ waypoints_dict['BARDI'] = poly_WYP_BARDI
 
 point_WYP_CACERES = Point((-6.43475, 39.52442))
 poly_WYP_CACERES = point_WYP_CACERES.buffer(wyp_radius)
-waypoints_dict['CACERES'] = poly_WYP_CACERES
+waypoints_dict['CCS'] = poly_WYP_CACERES
 
 point_WYP_LONGA = Point((-4.87592, 40.43643))
 poly_WYP_LONGA = point_WYP_LONGA.buffer(wyp_radius)
@@ -200,12 +200,9 @@ point_WYP_NANDO = Point((-2.17385, 39.98835))
 poly_WYP_NANDO = point_WYP_NANDO.buffer(wyp_radius)
 waypoints_dict['NANDO'] = poly_WYP_NANDO
 
-# analysis/visualization
-# pts = gpd.GeoSeries([point for point in waypoints_dict.values()])
-# plt.style.use('bmh')
-# pts.crs = {'init': 'epsg:4326'}
-# pts.plot(marker='.', color='red', markersize=4, figsize=(8, 8))
-# plt.show()
+point_WYP_VILLA = Point((-2.41056, 40.23306))
+poly_WYP_VILLA = point_WYP_VILLA.buffer(wyp_radius)
+waypoints_dict['VILLA'] = poly_WYP_VILLA
 
 # Runways
 
@@ -219,6 +216,14 @@ runway_ths_dict['32L'] = (-3.554039, 40.463237)
 runway_ths_dict['32R'] = (-3.536341, 40.473727)
 runway_ths_dict['18L'] = (-3.559349, 40.527936)
 runway_ths_dict['18R'] = (-3.574792, 40.522701)
+
+# analysis/visualization
+if __name__ == '__main__':
+    pts = gpd.GeoSeries([point for point in waypoints_dict.values()])
+    plt.style.use('bmh')
+    pts.crs = {'init': 'epsg:4326'}
+    pts.plot(marker='.', color='red', markersize=4, figsize=(8, 8))
+    plt.show()
 
 
 

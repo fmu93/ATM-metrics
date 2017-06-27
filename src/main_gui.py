@@ -25,6 +25,9 @@ class Ui_Form(QtWidgets.QWidget):
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
+        self.btnOpen = QtWidgets.QPushButton(Form)
+        self.btnOpen.setObjectName("btnOpen")
+        self.horizontalLayout.addWidget(self.btnOpen)
         self.btnRun = QtWidgets.QPushButton(Form)
         self.btnRun.setObjectName("btnRun")
         self.horizontalLayout.addWidget(self.btnRun)
@@ -60,17 +63,28 @@ class Ui_Form(QtWidgets.QWidget):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Runway Allocation"))
+        self.btnOpen.setText(_translate("Form", "Open"))
         self.btnRun.setText(_translate("Form", "Run"))
         self.btnWrite.setText(_translate("Form", "Write"))
         self.btnStop.setText(_translate("Form", "Stop"))
         self.btnQuit.setText(_translate("Form", "Quit"))
         self.lblTime.setText(_translate("dashboard", "...", None))
+        self.btnOpen.clicked.connect(self.openFileNamesDialog)
         self.btnRun.clicked.connect(core.coreClass.run)
         self.btnWrite.clicked.connect(core.coreClass.write_analysis)
         self.btnStop.clicked.connect(core.coreClass.stop)
         self.btnQuit.clicked.connect(self.close_application)
         self.tableWidget.setColumnCount(15)
-        self.tableWidget.setRowCount(100)
+        self.tableWidget.setRowCount(200)
+
+    def openFileNamesDialog(self):
+        options = QtWidgets.QFileDialog.Options()
+        # options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        files, _ = QtWidgets.QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()",
+                                                          "","All Files (*);;Hexx Files (*.hex)", options=options)
+        if files:
+            core.coreClass.infiles = [file(infile) for infile in files]
+            print(files)
 
     def set_palette(self):
         self.brush1 = QtGui.QBrush(QtGui.QColor('#F7F8F9'))  # rest

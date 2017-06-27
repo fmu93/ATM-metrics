@@ -13,6 +13,12 @@ def time_string(epoch):
     return string
 
 
+def sortedDictKeys(adict):
+    keys = adict.keys()
+    keys.sort()
+    return [key for key in keys]
+
+
 class IcaoDatabase:
     '''loads the latest icao_database in memory for getting type or regist number'''
     def __init__(self):
@@ -30,6 +36,5 @@ class IcaoDatabase:
     def get_regid(self, icao):
         if icao.upper() in self.icao_database.keys():
             return self.icao_database[icao.upper()][1]
-
 
 icao_database = IcaoDatabase()
