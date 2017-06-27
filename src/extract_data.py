@@ -97,8 +97,8 @@ class Metrics:
 
             if pos is not None and TMA.contains(pos):  # TODO here filter for containment in SID/STAR
 
-                for waypoint in waypoint_dict.keys():
-                    if waypoint_dict[waypoint].contains(pos):
+                for waypoint in waypoints_dict.keys():
+                    if waypoints_dict[waypoint].contains(pos):
                         current_flight.set_waypoint(waypoint)
 
                 NorS = None

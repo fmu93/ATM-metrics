@@ -58,110 +58,146 @@ poly_SE = Polygon(((-3.46864, 40.43686), (-3.07089, 40.07006), (-2.93503, 40.070
 
 poly_SW = Polygon(((-3.66551, 40.32802), (-3.59183, 40.06082), (-3.20344, 40.06778), (-3.52975, 40.39949), (-3.66551, 40.32802)))
 
+
 # waypoints
-poly_WY_CASTEJON = Polygon(((-2.56314, 40.37932), (-2.56296, 40.36410), (-2.54401, 40.35559), (-2.52309, 40.36423), (-2.52330, 40.37877), (-2.54423, 40.38744), (-2.56314, 40.37932)))
+waypoints_dict = {}
+wyp_radius = 0.05
 
-poly_WY_PERALES = Polygon(((-3.34881, 40.27063), (-3.37167, 40.26305), (-3.37058, 40.24088), (-3.34581, 40.23383), (-3.32473, 40.24209), (-3.32653, 40.26191), (-3.32631, 40.26247), (-3.32633, 40.26302), (-3.32634, 40.26339), (-3.34881, 40.27063)))
+point_WYP_CASTEJON = Point((-2.54461, 40.37195))
+poly_WYP_CASTEJON = point_WYP_CASTEJON.buffer(wyp_radius)
+waypoints_dict['CASTEJON'] = poly_WYP_CASTEJON
 
-poly_WY_NAVAS = Polygon(((-4.25073, 40.39374), (-4.27852, 40.38093), (-4.27804, 40.35540), (-4.24897, 40.34360), (-4.21630, 40.35741), (-4.21711, 40.38260), (-4.25073, 40.39374)))
+point_WYP_PERALES = Point((-3.34820, 40.25223))
+poly_WYP_PERALES = point_WYP_PERALES.buffer(wyp_radius)
+waypoints_dict['PERALES'] = poly_WYP_PERALES
 
-poly_WY_VILLATOBAS = Polygon(((-3.51873, 39.75533), (-3.46909, 39.73480), (-3.41694, 39.75621), (-3.41720, 39.79812), (-3.47086, 39.82127), (-3.52027, 39.79596), (-3.51873, 39.75533)))
+point_WYP_NAVAS = Point((-4.24741, 40.36867))
+poly_WYP_NAVAS = point_WYP_NAVAS.buffer(wyp_radius)
+waypoints_dict['NAVAS'] = poly_WYP_NAVAS
 
-poly_WY_ROBLEDILLO = Polygon(((-3.24922, 40.87546), (-3.27460, 40.86330), (-3.27329, 40.84003), (-3.24538, 40.83008), (-3.21996, 40.84206), (-3.22110, 40.86549), (-3.24922, 40.87546)))
+point_WYP_VILLATOBAS = Point((-3.46860, 39.77804))
+poly_WYP_VILLATOBAS = point_WYP_VILLATOBAS.buffer(wyp_radius)
+waypoints_dict['VILLATOBAS'] = poly_WYP_VILLATOBAS
 
-poly_WY_SOMOSIERRA = Polygon(((-3.60913, 41.17285), (-3.63164, 41.16128), (-3.63113, 41.14110), (-3.60625, 41.13235), (-3.58471, 41.14313), (-3.58467, 41.16201), (-3.60913, 41.17285)))
+point_WYP_ROBLEDILLO = Point((-3.24728, 40.85277))
+poly_WYP_ROBLEDILLO = point_WYP_ROBLEDILLO.buffer(wyp_radius)
+waypoints_dict['ROBLEDILLO'] = poly_WYP_ROBLEDILLO
 
-poly_WY_COLMENAR_VIEJO = Polygon(((-3.73622, 40.65568), (-3.74820, 40.65043), (-3.74749, 40.64011), (-3.73589, 40.63529), (-3.72286, 40.64014), (-3.72249, 40.65019), (-3.73622, 40.65568)))
+point_WYP_SOMOSIERRA = Point((-3.60816, 41.15260))
+poly_WYP_SOMOSIERRA = point_WYP_SOMOSIERRA.buffer(wyp_radius)
+waypoints_dict['SOMOSIERRA'] = poly_WYP_SOMOSIERRA
 
-poly_WY_TOLEDO = Polygon(((-4.36551, 39.98094), (-4.36550, 39.95540), (-4.33644, 39.94338), (-4.30905, 39.95503), (-4.30859, 39.98021), (-4.33719, 39.99299), (-4.36551, 39.98094)))
+point_WYP_COLMENAR_VIEJO = Point((-3.73534, 40.64548))
+poly_WYP_COLMENAR_VIEJO = point_WYP_COLMENAR_VIEJO.buffer(wyp_radius)
+waypoints_dict['COLMENAR_VIEJO'] = poly_WYP_COLMENAR_VIEJO
 
-poly_WY_SALAMANCA = Polygon(((-5.47844, 41.02446), (-5.47843, 41.00685), (-5.45595, 40.99930), (-5.43294, 41.00714), (-5.43311, 41.02527), (-5.45701, 41.03380), (-5.47844, 41.02446)))
+point_WYP_TOLEDO = Point((-4.33705, 39.96818))
+poly_WYP_TOLEDO = point_WYP_TOLEDO.buffer(wyp_radius)
+waypoints_dict['TOLEDO'] = poly_WYP_TOLEDO
 
-poly_WY_ZAMORA = Polygon(((-5.65442, 41.53567), (-5.65423, 41.52295), (-5.63890, 41.51738), (-5.62158, 41.52259), (-5.62135, 41.53581), (-5.63978, 41.54206), (-5.65442, 41.53567)))
+point_WYP_SALAMANCA = Point((-5.45569, 41.01655))
+poly_WYP_SALAMANCA = point_WYP_SALAMANCA.buffer(wyp_radius)
+waypoints_dict['SALAMANCA'] = poly_WYP_SALAMANCA
 
-poly_WY_ORBIS = Polygon(((-4.19589, 41.28982), (-4.22961, 41.27570), (-4.22812, 41.24980), (-4.19386, 41.23931), (-4.16325, 41.25106), (-4.16295, 41.27816), (-4.19589, 41.28982)))
+point_WYP_ZAMORA = Point((-5.63972, 41.53014))
+poly_WYP_ZAMORA = point_WYP_ZAMORA.buffer(wyp_radius)
+waypoints_dict['ZAMORA'] = poly_WYP_ZAMORA
 
-poly_WY_AVILA = Polygon(((-4.54960, 40.63996), (-4.56883, 40.63210), (-4.56850, 40.61547), (-4.54966, 40.60734), (-4.52951, 40.61562), (-4.52986, 40.63240), (-4.54960, 40.63996)))
+point_WYP_ORBIS = Point((-4.19628, 41.26455))
+poly_WYP_ORBIS = point_WYP_ORBIS.buffer(wyp_radius)
+waypoints_dict['ORBIS'] = poly_WYP_ORBIS
 
-poly_WY_MORAL = Polygon(((-3.54262, 39.01679), (-3.56159, 39.00824), (-3.56158, 38.99121), (-3.54197, 38.98197), (-3.52146, 38.99100), (-3.52154, 39.00802), (-3.54262, 39.01679)))
+point_WYP_AVILA = Point((-4.54917, 40.62362))
+poly_WYP_AVILA = point_WYP_AVILA.buffer(wyp_radius)
+waypoints_dict['AVILA'] = poly_WYP_AVILA
 
-poly_WY_SOTUK = Polygon(((-4.76050, 39.19916), (-4.76009, 39.18744), (-4.74585, 39.18137), (-4.73135, 39.18737), (-4.73174, 39.19977), (-4.74696, 39.20545), (-4.76050, 39.19916)))
+point_WYP_MORAL = Point((-3.54152, 38.99938))
+poly_WYP_MORAL = point_WYP_MORAL.buffer(wyp_radius)
+waypoints_dict['MORAL'] = poly_WYP_MORAL
 
-poly_WY_RIDAV = Polygon(((-5.80884, 40.54662), (-5.82314, 40.54077), (-5.82304, 40.52907), (-5.80867, 40.52296), (-5.79276, 40.52914), (-5.79287, 40.54041), (-5.80884, 40.54662)))
+point_WYP_SOTUK = Point((-4.74593, 39.19341))
+poly_WYP_SOTUK = point_WYP_SOTUK.buffer(wyp_radius)
+waypoints_dict['SOTUK'] = poly_WYP_SOTUK
 
-poly_WY_EREMA = Polygon(((-4.15762, 41.08900), (-4.15750, 41.07434), (-4.13899, 41.06636), (-4.12019, 41.07393), (-4.12005, 41.08895), (-4.13961, 41.09744), (-4.15762, 41.08900)))
+point_WYP_RIDAV = Point((-5.80795, 40.53447))
+poly_WYP_RIDAV = point_WYP_RIDAV.buffer(wyp_radius)
+waypoints_dict['RIDAV'] = poly_WYP_RIDAV
 
-poly_WY_TABANERA = Polygon(((-4.12423, 42.03470), (-4.12403, 42.02118), (-4.10870, 42.01475), (-4.09216, 42.02139), (-4.09230, 42.03484), (-4.10929, 42.04089), (-4.12423, 42.03470)))
+point_WYP_EREMA = Point((-4.13884, 41.08185))
+poly_WYP_EREMA = point_WYP_EREMA.buffer(wyp_radius)
+waypoints_dict['EREMA'] = poly_WYP_EREMA
 
-poly_WY_LALPI = Polygon(((-3.70394, 40.97284), (-3.71905, 40.96601), (-3.71790, 40.95265), (-3.70321, 40.94651), (-3.68756, 40.95175), (-3.68594, 40.96647), (-3.70394, 40.97284)))
+point_WYP_TABANERA = Point((-4.10819, 42.02782))
+poly_WYP_TABANERA = point_WYP_TABANERA.buffer(wyp_radius)
+waypoints_dict['TABANERA'] = poly_WYP_TABANERA
 
-poly_WY_RESBI = Polygon(((-4.20661, 40.74370), (-4.20564, 40.72756), (-4.18757, 40.71993), (-4.16550, 40.72785), (-4.16572, 40.74380), (-4.18770, 40.75079), (-4.20661, 40.74370)))
+point_WYP_LALPI = Point((-3.70249, 40.95951))
+poly_WYP_LALPI = point_WYP_LALPI.buffer(wyp_radius)
+waypoints_dict['LALPI'] = poly_WYP_LALPI
 
-poly_WY_BUREX = Polygon(((-3.96025, 39.81883), (-3.95999, 39.80158), (-3.93903, 39.79269), (-3.91572, 39.80146), (-3.91537, 39.81819), (-3.93958, 39.82854), (-3.96025, 39.81883)))
+point_WYP_RESBI = Point((-4.18606, 40.73531))
+poly_WYP_RESBI = point_WYP_RESBI.buffer(wyp_radius)
+waypoints_dict['RESBI'] = poly_WYP_RESBI
 
-poly_WY_NASOS = Polygon(((-3.02837, 39.41317), (-3.04419, 39.40580), (-3.04388, 39.39115), (-3.02725, 39.38465), (-3.00857, 39.39249), (-3.00906, 39.40639), (-3.02837, 39.41317)))
+point_WYP_BUREX = Point((-3.93781, 39.81050))
+poly_WYP_BUREX = point_WYP_BUREX.buffer(wyp_radius)
+waypoints_dict['BUREX'] = poly_WYP_BUREX
 
-poly_WY_SIRGU = Polygon(((-2.61858, 40.26877), (-2.61896, 40.25319), (-2.60051, 40.24471), (-2.57869, 40.25341), (-2.57846, 40.26907), (-2.60082, 40.27645), (-2.61858, 40.26877)))
+point_WYP_NASOS = Point((-3.02638, 39.39891))
+poly_WYP_NASOS = point_WYP_NASOS.buffer(wyp_radius)
+waypoints_dict['NASOS'] = poly_WYP_NASOS
 
-poly_WY_PRADO = Polygon(((-2.02820, 40.15291), (-2.02831, 40.14075), (-2.01057, 40.13249), (-1.99265, 40.14013), (-1.99283, 40.15280), (-2.01104, 40.16082), (-2.02820, 40.15291)))
+point_WYP_SIRGU = Point((-2.59871, 40.26058))
+poly_WYP_SIRGU = point_WYP_SIRGU.buffer(wyp_radius)
+waypoints_dict['SIRGU'] = poly_WYP_SIRGU
 
-poly_WY_ADUXO = Polygon(((-2.08534, 40.52063), (-2.08446, 40.50365), (-2.06419, 40.49443), (-2.04170, 40.50278), (-2.04183, 40.52103), (-2.06412, 40.52899), (-2.08534, 40.52063)))
+point_WYP_PRADO = Point((-2.01048, 40.14665))
+poly_WYP_PRADO = point_WYP_PRADO.buffer(wyp_radius)
+waypoints_dict['PRADO'] = poly_WYP_PRADO
 
-poly_WY_TERSA = Polygon(((-2.15201, 40.73130), (-2.15214, 40.71984), (-2.13777, 40.71270), (-2.12160, 40.71964), (-2.12125, 40.73106), (-2.13777, 40.73730), (-2.15201, 40.73130)))
+point_WYP_ADUXO = Point((-2.06352, 40.51171))
+poly_WYP_ADUXO = point_WYP_ADUXO.buffer(wyp_radius)
+waypoints_dict['ADUXO'] = poly_WYP_ADUXO
 
-poly_WY_NOSKO = Polygon(((-2.83644, 40.66418), (-2.83595, 40.64682), (-2.81663, 40.63965), (-2.79480, 40.64685), (-2.79471, 40.66436), (-2.81696, 40.67252), (-2.83644, 40.66418)))
+point_WYP_TERSA = Point((-2.13670, 40.72500))
+poly_WYP_TERSA = point_WYP_TERSA.buffer(wyp_radius)
+waypoints_dict['TERSA'] = poly_WYP_TERSA
 
-poly_WY_PINAR = Polygon(((-2.61870, 40.98708), (-2.61824, 40.97131), (-2.59944, 40.96387), (-2.57723, 40.97140), (-2.57756, 40.98711), (-2.59970, 40.99595), (-2.61870, 40.98708)))
+point_WYP_NOSKO = Point((-2.81557, 40.65606))
+poly_WYP_NOSKO = point_WYP_NOSKO.buffer(wyp_radius)
+waypoints_dict['NOSKO'] = poly_WYP_NOSKO
 
-poly_WY_BARAHONA = Polygon(((-2.64691, 41.33053), (-2.64756, 41.31604), (-2.63032, 41.30812), (-2.61071, 41.31588), (-2.61039, 41.33085), (-2.63011, 41.33760), (-2.64691, 41.33053)))
+point_WYP_PINAR = Point((-2.59796, 40.97968))
+poly_WYP_PINAR = point_WYP_PINAR.buffer(wyp_radius)
+waypoints_dict['PINAR'] = poly_WYP_PINAR
 
-poly_WY_TAGOM = Polygon(((-3.45237, 40.99224), (-3.45334, 40.97551), (-3.43166, 40.96648), (-3.41021, 40.97532), (-3.41043, 40.99170), (-3.43228, 41.00105), (-3.45237, 40.99224)))
+point_WYP_BARAHONA = Point((-2.62984, 41.32356))
+poly_WYP_BARAHONA = point_WYP_BARAHONA.buffer(wyp_radius)
+waypoints_dict['BARAHONA'] = poly_WYP_BARAHONA
 
-poly_WY_OBIKI = Polygon(((-2.87681, 41.23417), (-2.87673, 41.22095), (-2.85931, 41.21297), (-2.84072, 41.22079), (-2.84135, 41.23474), (-2.85995, 41.24090), (-2.87681, 41.23417)))
+point_WYP_TAGOM = Point((-3.43177, 40.98377))
+poly_WYP_TAGOM = point_WYP_TAGOM.buffer(wyp_radius)
+waypoints_dict['TAGOM'] = poly_WYP_TAGOM
 
-poly_WY_BARDI = Polygon(((-6.32024, 40.59080), (-6.32012, 40.57758), (-6.30193, 40.56901), (-6.28319, 40.57737), (-6.28324, 40.59148), (-6.30271, 40.59777), (-6.32024, 40.59080)))
+point_WYP_OBIKI = Point((-2.85877, 41.22684))
+poly_WYP_OBIKI = point_WYP_OBIKI.buffer(wyp_radius)
+waypoints_dict['OBIKI'] = poly_WYP_OBIKI
 
-poly_WY_CACERES = Polygon(((-6.43547, 39.53707), (-6.44933, 39.53013), (-6.44934, 39.51852), (-6.43446, 39.51160), (-6.41840, 39.51926), (-6.41792, 39.53049), (-6.43547, 39.53707)))
+point_WYP_BARDI = Point((-6.30172, 40.58340))
+poly_WYP_BARDI = point_WYP_BARDI.buffer(wyp_radius)
+waypoints_dict['BARDI'] = poly_WYP_BARDI
 
-poly_WY_LONGA = Polygon(((-4.87632, 40.45239), (-4.89433, 40.44526), (-4.89554, 40.43035), (-4.87704, 40.42257), (-4.85630, 40.42951), (-4.85782, 40.44598), (-4.87632, 40.45239)))
+point_WYP_CACERES = Point((-6.43475, 39.52442))
+poly_WYP_CACERES = point_WYP_CACERES.buffer(wyp_radius)
+waypoints_dict['CACERES'] = poly_WYP_CACERES
 
-poly_WY_NANDO = Polygon(((-2.17456, 40.00252), (-2.19108, 39.99590), (-2.19160, 39.98220), (-2.17534, 39.97418), (-2.15620, 39.98163), (-2.15610, 39.99557), (-2.17456, 40.00252)))
+point_WYP_LONGA = Point((-4.87592, 40.43643))
+poly_WYP_LONGA = point_WYP_LONGA.buffer(wyp_radius)
+waypoints_dict['LONGA'] = poly_WYP_LONGA
 
-waypoint_dict = {}
-waypoint_dict['CASTEJON'] = poly_WY_CASTEJON
-waypoint_dict['PERALES'] = poly_WY_PERALES
-waypoint_dict['NAVAS'] = poly_WY_NAVAS
-waypoint_dict['VILLATOBAS'] = poly_WY_VILLATOBAS
-waypoint_dict['ROBLEDILLO'] = poly_WY_ROBLEDILLO
-waypoint_dict['SOMOSIERRA'] = poly_WY_SOMOSIERRA
-waypoint_dict['COLMENAR_VIEJO '] = poly_WY_COLMENAR_VIEJO
-waypoint_dict['TOLEDO'] = poly_WY_TOLEDO
-waypoint_dict['SALAMANCA'] = poly_WY_SALAMANCA
-waypoint_dict['ZAMORA'] = poly_WY_ZAMORA
-waypoint_dict['ORBIS'] = poly_WY_ORBIS
-waypoint_dict['AVILA'] = poly_WY_AVILA
-waypoint_dict['MORAL'] = poly_WY_MORAL
-waypoint_dict['SOTUK'] = poly_WY_SOTUK
-waypoint_dict['RIDAV'] = poly_WY_RIDAV
-waypoint_dict['EREMA'] = poly_WY_EREMA
-waypoint_dict['TABANERA'] = poly_WY_TABANERA
-waypoint_dict['LALPI'] = poly_WY_LALPI
-waypoint_dict['RESBI'] = poly_WY_RESBI
-waypoint_dict['BUREX'] = poly_WY_BUREX
-waypoint_dict['NASOS'] = poly_WY_NASOS
-waypoint_dict['SIRGU'] = poly_WY_SIRGU
-waypoint_dict['PRADO'] = poly_WY_PRADO
-waypoint_dict['ADUXO'] = poly_WY_ADUXO
-waypoint_dict['TERSA'] = poly_WY_TERSA
-waypoint_dict['NOSKO'] = poly_WY_NOSKO
-waypoint_dict['PINAR'] = poly_WY_PINAR
-waypoint_dict['BARAHONA'] = poly_WY_BARAHONA
-waypoint_dict['TAGOM'] = poly_WY_TAGOM
-waypoint_dict['OBIKI'] = poly_WY_OBIKI
-waypoint_dict['BARDI'] = poly_WY_BARDI
-waypoint_dict['CACERES'] = poly_WY_CACERES
-waypoint_dict['LONGA'] = poly_WY_LONGA
-waypoint_dict['NANDO'] = poly_WY_NANDO
+point_WYP_NANDO = Point((-2.17385, 39.98835))
+poly_WYP_NANDO = point_WYP_NANDO.buffer(wyp_radius)
+waypoints_dict['NANDO'] = poly_WYP_NANDO
 
 # Runways
 
