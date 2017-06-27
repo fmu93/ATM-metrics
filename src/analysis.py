@@ -21,7 +21,7 @@ class FlightsLog:
             for operation in self.final_op_list:
                 date = time_string(operation.op_timestamp)
                 hour = time.gmtime(operation.op_timestamp).tm_hour
-                if hour - prev_hour > 0 or hour - prev_hour <= -23:
+                if hour - prev_hour != 0:
                     guess_log_file.write('\n')
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
@@ -33,7 +33,7 @@ class FlightsLog:
                                           operation.miss_comment, operation.op_comment, ', '.join(operation.flight.waypoints)))
                 except Exception:
                     print 'Error in logging!!'
-                    guess_log_file.write('Error in ' + '{:6}'.format(operation.flight.aircraft.icao))
+                    guess_log_file.write('Error with logging ' + '{:6}'.format(operation.flight.aircraft.icao))
                 prev_hour = hour
 
 
@@ -71,9 +71,9 @@ class ConfigLog:
         last_conf = None
         config = None
         for operation in self.final_op_list:
-            if operation.op_timestamp is not None and operation.val_operation_str:
+            if operation.op_timestamp is not None and operation.op_runway:
                 first_epoch = operation.op_timestamp
-                if '32' in operation.val_operation_str or '36' in operation.val_operation_str:
+                if '32' in operation.op_runway or '36' in operation.op_runway:
                     last_conf = 'N'
                     config = 'N'
                 else:
@@ -93,7 +93,7 @@ class ConfigLog:
         log = False
         for operation in self.final_op_list:
             op_timestamp = operation.op_timestamp
-            op = operation.val_operation_str
+            op = operation.op_runway
 
             if op_timestamp is not None and op and prev_op:
                 if '32' in op or '36' in op:  # now NORTH
@@ -132,7 +132,7 @@ class ConfigLog:
                     pass
 
                 prev_timestamp = operation.op_timestamp
-                prev_op = operation.val_operation_str
+                prev_op = operation.op_runway
 
         self.add_config(from_time, last_time, last_conf, total_count, counter[0], counter[1],
                         counter[2], counter[3], counter[4], counter[5],

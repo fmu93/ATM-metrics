@@ -24,7 +24,7 @@ class Aircraft:
             self.flights_dict[Callsign(self, new_call, epoch)] = Flight(new_call, self, epoch)
             return
 
-        self.flights_dict.keys().sort()
+        # self.flights_dict.keys().sort()  # TODO check effect of sort... does it matter?
         current_callsign = self.flights_dict.keys()[-1]  # latest callsign
 
         if current_callsign.call == new_call:
@@ -186,7 +186,9 @@ class Flight:
             # more than 10 minutes with no calls and new guess is showing up, make new 'no_call' flight
             self.aircraft.set_call(no_call, epoch)
             # don't forget to assign this new guess to the new flight
-            self.aircraft.get_current_flight().set_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
+            if self.aircraft.get_current_flight().call != no_call:
+                # 'maximum recursion depth exceeded in cmp' when no_call
+                self.aircraft.get_current_flight().set_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
             return
 
         if not len(self.operations) > 0 or (len(self.operations) > 0 and
@@ -215,7 +217,7 @@ class Flight:
                                     '{:1.2f}'.format((validated_op.op_timestamp -
                                                       operation_list[i - 1].op_timestamp) / 60.0) + ' min) '
                     else:
-                        validated_op.op_comment = '(second operation) '
+                        validated_op.op_comment = '(second operation) '  # with new callsign keying model we don't need this
 
                 operation_list.append(validated_op)
                 prev_LorT = validated_op.LorT

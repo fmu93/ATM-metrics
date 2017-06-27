@@ -16,13 +16,14 @@ out_name = 'runway_allocation_'
 
 
 class DataExtractorThread(threading.Thread):
-    def __init__(self, infiles, ui):
+    def __init__(self, infiles, core):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
         self.setDaemon(True)
         self.setName("DataExtractorThread")
         self.infiles = infiles
-        self.ui = ui
+        self.core = core
+        self.ui = core.ui
         self.icao_dict = {}
         self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
         self.extract_data = extract_data.Metrics(self)
@@ -44,6 +45,7 @@ class DataExtractorThread(threading.Thread):
             # icao_filter = '4ca5bb'
             icao_filter = None
             self.extract_data.run(infile, icao_filter)
+        self.core.stop()
 
     def dispTime(self, timeStr):
         self.ui.changeClock(timeStr)
@@ -52,13 +54,14 @@ class DataExtractorThread(threading.Thread):
 class OperationRefreshThread(threading.Thread):
     """Thread that executes a task every N seconds"""
 
-    def __init__(self, dataExtractor, ui):
+    def __init__(self, dataExtractor, core):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
         self.setDaemon(True)
         self.setName("OperationRefreshThread")
         self._interval = 3
-        self.ui = ui
+        self.core = core
+        self.ui = core.ui
         self.dataExtractor = dataExtractor
         self.operation_dict = {}
 
@@ -88,7 +91,7 @@ class OperationRefreshThread(threading.Thread):
                                     flight.operations[-1].last_op_guess >= flight.operations[-1].last_validation:
 
                         for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
-                            if operation.op_runway or operation.op_timestamp is not None:
+                            if operation.op_timestamp is not None:  # TODO why are some op_timestamp None?
                                 # final_operations_list.append(operation)
                                 self.operation_dict[operation] = operation
                                 new_op_list.append(operation)
@@ -114,8 +117,8 @@ class Core:
             ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
 
     def run(self):
-        self.dataExtractor = DataExtractorThread(self.infiles, self.ui)
-        self.operationRefresh = OperationRefreshThread(self.dataExtractor, self.ui)
+        self.dataExtractor = DataExtractorThread(self.infiles, self)
+        self.operationRefresh = OperationRefreshThread(self.dataExtractor, self)
         dataExtractorThread = threading.Thread(target=self.dataExtractor.run, args=())
         operationRefreshThread = threading.Thread(target=self.operationRefresh.run, args=())
         dataExtractorThread.start()
@@ -140,7 +143,9 @@ class Core:
             op_list.append(op)
         op_list.sort()
         analysis.FlightsLog('C:/Users/Croket/Python workspace/ATM metrics/data/',
-                            'ra', op_list).write()
+                            'test_flights', op_list).write()
+        analysis.ConfigLog('C:/Users/Croket/Python workspace/ATM metrics/data/',
+                            'test_config', op_list).write()
         print 'flights log saved'
 
 # core Class

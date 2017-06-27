@@ -1,6 +1,7 @@
 from shapely.geometry import Polygon
 from shapely.geometry import Point
 import geopandas as gpd
+import matplotlib.pyplot as plt
 
 airport_poly = Polygon(((-3.29377, 41.07961), (-3.88696, 41.08127), (-3.59719, 40.05861), (-2.93164, 40.06891), (-3.29377, 41.07961)))
 
@@ -61,7 +62,7 @@ poly_SW = Polygon(((-3.66551, 40.32802), (-3.59183, 40.06082), (-3.20344, 40.067
 
 # waypoints
 waypoints_dict = {}
-wyp_radius = 0.05
+wyp_radius = 0.1
 
 point_WYP_CASTEJON = Point((-2.54461, 40.37195))
 poly_WYP_CASTEJON = point_WYP_CASTEJON.buffer(wyp_radius)
@@ -198,6 +199,13 @@ waypoints_dict['LONGA'] = poly_WYP_LONGA
 point_WYP_NANDO = Point((-2.17385, 39.98835))
 poly_WYP_NANDO = point_WYP_NANDO.buffer(wyp_radius)
 waypoints_dict['NANDO'] = poly_WYP_NANDO
+
+# analysis/visualization
+# pts = gpd.GeoSeries([point for point in waypoints_dict.values()])
+# plt.style.use('bmh')
+# pts.crs = {'init': 'epsg:4326'}
+# pts.plot(marker='.', color='red', markersize=4, figsize=(8, 8))
+# plt.show()
 
 # Runways
 
