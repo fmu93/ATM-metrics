@@ -7,8 +7,8 @@ no_call = 'no_call'
 miss_event = 'missed? '
 airport_altitude = 600  # [m]
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
-horHeaders = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','V(fpm)','GS(kts)','(deg)',
-              'track','runway','change_comment','miss_comment','op_comment', 'waypoints']
+horHeaders = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','pos_count','V(fpm)','GS(kts)','(deg)',
+              'track','runway','change_comm','miss_comm','op_comm', 'waypoints']
 
 
 # output parameters
@@ -41,7 +41,9 @@ class DataExtractorThread(threading.Thread):
         # display name of current database running
         for infile in self.infiles:
             print infile.name
-            self.extract_data.run(infile, None)
+            # icao_filter = '4ca5bb'
+            icao_filter = None
+            self.extract_data.run(infile, icao_filter)
 
     def dispTime(self, timeStr):
         self.ui.changeClock(timeStr)
@@ -83,7 +85,7 @@ class OperationRefreshThread(threading.Thread):
         for aircraft in self.dataExtractor.icao_dict.values():
                 for flight in aircraft.flights_dict.values():
                     if len(flight.operations) > 0 and \
-                                    flight.operations[-1].last_op_guess > flight.operations[-1].last_validation:
+                                    flight.operations[-1].last_op_guess >= flight.operations[-1].last_validation:
 
                         for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
                             if operation.op_runway or operation.op_timestamp is not None:
@@ -108,8 +110,8 @@ class Core:
         self.dataExtractor = None
         self.operationRefresh = None
         self.ui = None
-        self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')]
-            # ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
+        self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')
+            ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
 
     def run(self):
         self.dataExtractor = DataExtractorThread(self.infiles, self.ui)

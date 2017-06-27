@@ -69,7 +69,7 @@ class Ui_Form(QtWidgets.QWidget):
         self.btnWrite.clicked.connect(core.coreClass.write_analysis)
         self.btnStop.clicked.connect(core.coreClass.stop)
         self.btnQuit.clicked.connect(self.close_application)
-        self.tableWidget.setColumnCount(14)
+        self.tableWidget.setColumnCount(15)
         self.tableWidget.setRowCount(100)
 
     def set_palette(self):

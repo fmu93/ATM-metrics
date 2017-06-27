@@ -16,7 +16,7 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tV(fpm)\tGS(kts)\t(deg)\t"\
+            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\t(deg)\t"\
             "track\trunway\tchange_comment\tmiss_comment\top_comment\twaypoints\n")
             for operation in self.final_op_list:
                 date = time_string(operation.op_timestamp)
@@ -24,15 +24,16 @@ class FlightsLog:
                 if hour - prev_hour > 0 or hour - prev_hour <= -23:
                     guess_log_file.write('\n')
                 try:
-                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                                          ('{:<8}'.format(operation.flight.call), '{:6}'.format(operation.flight.aircraft.icao),
                                           '{:4}'.format(operation.flight.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
-                                          date, '{:+05.0f}'.format(operation.get_mean_vrate()),
+                                          date, '{:1}'.format(operation.guess_count),'{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
                                           '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway, operation.zone_change_comment,
                                           operation.miss_comment, operation.op_comment, ', '.join(operation.flight.waypoints)))
                 except Exception:
                     print 'Error in logging!!'
+                    guess_log_file.write('Error in ' + '{:6}'.format(operation.flight.aircraft.icao))
                 prev_hour = hour
 
 
