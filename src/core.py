@@ -7,9 +7,6 @@ no_call = 'no_call'
 miss_event = 'missed? '
 airport_altitude = 600  # [m]
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
-horHeaders = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','pos_count','V(fpm)','GS(kts)','(deg)',
-              'track','runway','change_comm','miss_comm','op_comm', 'waypoints']
-
 
 # output parameters
 out_name = 'runway_allocation_'
@@ -23,7 +20,6 @@ class DataExtractorThread(threading.Thread):
         self.setName("DataExtractorThread")
         self.infiles = infiles
         self.core = core
-        self.ui = core.ui
         self.icao_dict = {}
         self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
         self.extract_data = extract_data.Metrics(self)
@@ -45,10 +41,10 @@ class DataExtractorThread(threading.Thread):
             # icao_filter = '4ca5bb'
             icao_filter = None
             self.extract_data.run(infile, icao_filter)
-        self.core.stop()
+        self.core.stop()  # TODO add label for done and progress bar
 
     def dispTime(self, timeStr):
-        self.ui.changeClock(timeStr)
+        self.core.controller.changeClock(timeStr)
 
 
 class OperationRefreshThread(threading.Thread):
@@ -61,7 +57,6 @@ class OperationRefreshThread(threading.Thread):
         self.setName("OperationRefreshThread")
         self._interval = 3
         self.core = core
-        self.ui = core.ui
         self.dataExtractor = dataExtractor
         self.operation_dict = {}
 
@@ -83,7 +78,6 @@ class OperationRefreshThread(threading.Thread):
 
     def task(self):
         """The task done by this thread - override in subclasses"""
-        print 'Refreshing ' + str(len(self.operation_dict.keys()))
         new_op_list = []
         for aircraft in self.dataExtractor.icao_dict.values():
                 for flight in aircraft.flights_dict.values():
@@ -97,6 +91,7 @@ class OperationRefreshThread(threading.Thread):
                                 new_op_list.append(operation)
         self.display()
         new_op_list.sort()
+        print 'Refreshing ' + str(len(new_op_list)) + ' of ' + str(len(self.operation_dict.keys())) + ' flights:'
         for op in new_op_list:
             print op.get_op_rows()
 
@@ -105,14 +100,17 @@ class OperationRefreshThread(threading.Thread):
         for op in (self.operation_dict.values()):
             op_list.append(op)
         op_list.sort(reverse=True)
-        self.ui.dataToTable(op_list)
+        config_list = analysis.ConfigLog(op_list).run()
+
+        self.core.controller.update_tableConfig(config_list)
+        self.core.controller.update_tableFlights(op_list)
 
 
 class Core:
     def __init__(self):
         self.dataExtractor = None
         self.operationRefresh = None
-        self.ui = None
+        self.controller = None
         self.infiles = None
         # self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')
         #     ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
@@ -134,20 +132,18 @@ class Core:
         except Exception:
             print 'Can\'t kill threads'
 
-    def set_ui(self, ui):
-        self.ui = ui
-        self.ui.tableWidget.setHorizontalHeaderLabels(horHeaders)
-        self.ui.tableWidget.resizeColumnsToContents()
+    def set_controller(self, controller):
+        self.controller = controller
 
     def write_analysis(self):
         op_list = []
         for op in self.operationRefresh.operation_dict.values():
             op_list.append(op)
         op_list.sort()
+        # TODO add filenames to output
         analysis.FlightsLog('C:/Users/Croket/Python workspace/ATM metrics/data/',
                             'test_flights', op_list).write()
-        analysis.ConfigLog('C:/Users/Croket/Python workspace/ATM metrics/data/',
-                            'test_config', op_list).write()
+        analysis.ConfigLog(op_list).write('C:/Users/Croket/Python workspace/ATM metrics/data/', 'test_config')
         print 'flights log saved'
 
 # core Class
