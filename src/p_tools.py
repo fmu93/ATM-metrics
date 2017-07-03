@@ -1,16 +1,17 @@
 import time
+import os
 
 
 def time_string(epoch):
     "turns epoch time into a string: yyyy-mm-dd hh:mm:ss"
     if epoch is None:
         return "unknown_time"
-    epoch = float(epoch)
-    string = '%s-%s-%s %s:%s:%s' % (
-        '{:04d}'.format(time.gmtime(epoch).tm_year), '{:02d}'.format(time.gmtime(epoch).tm_mon),
-        '{:02d}'.format(time.gmtime(epoch).tm_mday), '{:02d}'.format(time.gmtime(epoch).tm_hour),
-        '{:02d}'.format(time.gmtime(epoch).tm_min), '{:02d}'.format(time.gmtime(epoch).tm_sec))
+    string = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(epoch)))
     return string
+
+
+def get_file_name(infile):
+    return os.path.splitext(os.path.basename(infile.name))[0]
 
 
 def sortedDictKeys(adict):

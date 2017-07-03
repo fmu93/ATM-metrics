@@ -1,7 +1,9 @@
+import os
 import extract_data
 import main_gui
 import threading
 import analysis
+from p_tools import sortedDictKeys, get_file_name
 
 no_call = 'no_call'
 miss_event = 'missed? '
@@ -19,10 +21,14 @@ class DataExtractorThread(threading.Thread):
         self.setDaemon(True)
         self.setName("DataExtractorThread")
         self.infiles = infiles
+        self.infiles_dict = {}
         self.core = core
         self.icao_dict = {}
         self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
         self.extract_data = extract_data.Metrics(self)
+        self.num_lines = 1.0
+        self.first_file = None
+        self.file_count = 1
 
     def shutdown(self):
         """Stop this thread"""
@@ -34,14 +40,28 @@ class DataExtractorThread(threading.Thread):
         self.task()
 
     def task(self):
-        # TODO list and order input files to feed the extract_data.py
         for infile in self.infiles:
+            with open(infile.name, 'r') as database:
+                try:
+                    head = [database.readline() for x in xrange(2)]  # get first two lines (header + first)
+                    first_timestamp = float(head[-1].split('\t')[0])
+                    self.infiles_dict[first_timestamp] = infile
+                    self.num_lines += sum(1.0 for line in database)
+                except:
+                    print 'Error in file: ' + infile.name
+
+        for timestamp in sortedDictKeys(self.infiles_dict):
             # display name of current database running
-            print infile.name
-            self.core.controller.setCurrent(infile.name)
+            if not self.first_file:
+                self.first_file = self.infiles_dict[timestamp]
+            print self.infiles_dict[timestamp].name
+            self.core.controller.setCurrent('File %d/%d: %s'
+                                            % (self.file_count, len(self.infiles_dict),
+                                               get_file_name(self.infiles_dict[timestamp])))
             # icao_filter = '4ca5bb'
             icao_filter = None
-            self.extract_data.run(infile, icao_filter)
+            self.extract_data.run(self.infiles_dict[timestamp], icao_filter)
+            self.file_count += 1
         self.core.done()  # TODO add progress bar
 
     def dispTime(self, timeStr):
@@ -110,7 +130,7 @@ class OperationRefreshThread(threading.Thread):
         self.core.controller.update_tableFlights(op_list)
 
 
-class Core:  # TODO use builtin time formats
+class Core:
     def __init__(self):
         self.dataExtractor = None
         self.operationRefresh = None
@@ -150,11 +170,12 @@ class Core:  # TODO use builtin time formats
         for op in self.operationRefresh.operation_dict.values():
             op_list.append(op)
         op_list.sort()
-        # TODO add filenames to output
-        analysis.FlightsLog('C:/Users/Croket/Python workspace/ATM metrics/data/',
-                            'test_flights', op_list).write()
-        analysis.ConfigLog(op_list).write('C:/Users/Croket/Python workspace/ATM metrics/data/', 'test_config')
-        print 'flights log saved'
+        analysis.FlightsLog(os.path.dirname(self.dataExtractor.first_file.name),
+                            os.path.splitext(os.path.basename(self.dataExtractor.first_file.name))[0],
+                            op_list).write()
+        analysis.ConfigLog(op_list).write(os.path.dirname(self.dataExtractor.first_file.name),
+                                          get_file_name(self.dataExtractor.first_file))
+        print 'logs saved'
 
 # core Class
 coreClass = Core()

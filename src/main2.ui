@@ -92,7 +92,7 @@
        <item>
         <widget class="QLabel" name="lblCurrent">
          <property name="text">
-          <string>(current filename)</string>
+          <string>...</string>
          </property>
         </widget>
        </item>
@@ -178,7 +178,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="Configuration">
         <property name="sizePolicy">

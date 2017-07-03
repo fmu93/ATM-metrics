@@ -2,8 +2,6 @@ from p_tools import icao_database, time_string, sortedDictKeys
 from core import no_call, airport_altitude
 from geo_resources import runway_ths_dict
 from geopy.distance import great_circle
-import operator
-import time
 
 
 class Aircraft:
@@ -204,6 +202,7 @@ class Operation:
         self.miss_comment = ''
         self.missed_detected = None
         self.miss_inclin_ths = 1
+        self.possible_miss_time = None
         self.miss_guess_count = 0
         self.miss_guess_min = 3
 
@@ -262,12 +261,15 @@ class Operation:
                 if UorD == 'D':
                     # normal 18 op
                     self.miss_guess_count = 0
+                    self.possible_miss_time = None
                     pass
                 elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
-                    # TODO distance to ths and alt at moment of missed... store first and wait until miss_count
+                    if not self.possible_miss_time:  # so later we get position from this moment
+                        self.possible_miss_time = epoch
                     self.miss_guess_count += 1
                     if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
-                        self.missed_detected = MissedApproach(self, epoch)
+                        self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
                 self.IorO = 'O'
@@ -289,12 +291,15 @@ class Operation:
                 if UorD == 'D':
                     # normal 32 op
                     self.miss_guess_count = 0
+                    self.possible_miss_time = None
                     pass
-                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
-                    # event = miss_event
+                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:  # TODO check
+                    if not self.possible_miss_time:
+                        self.possible_miss_time = epoch
                     self.miss_guess_count += 1
                     if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
-                        self.missed_detected = MissedApproach(self, epoch)
+                        self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
                 self.IorO = 'O'
                 runway = '14'
@@ -503,13 +508,13 @@ class Velocity:
 
 
 class MissedApproach:
-    def __init__(self, operation, epoch):
+    def __init__(self, operation, epoch, missed_time):
         self.operation = operation
         self.operation.validate_operation(epoch)
+        self.timestamp = missed_time
         self.runway = self.operation.op_runway
-        self.position = self.operation.flight.aircraft.get_position_delimited(epoch, 0, 5)
+        self.position = self.operation.flight.aircraft.get_position_delimited(self.timestamp, 0, 20)
         self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff()
-        self.timestamp = epoch
         self.dist_to_ths = None
         for runway_ths_key in runway_ths_dict.keys():
             if self.runway in runway_ths_key:

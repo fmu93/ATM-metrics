@@ -61,10 +61,12 @@ class Controller:
             # self.tableWidget.setRowCount(m)
             for n, item in enumerate(op.get_op_rows()):
                 newItem = QtWidgets.QTableWidgetItem(item)
-                if epoch_now - op.op_timestamp < 900:  # TODO coloring based on current time and not latest op
+                if epoch_now - op.op_timestamp < 900:  # TODO coloring of rows darker/lighter
                     newItem.setBackground(self.brush3)
                 elif epoch_now - op.op_timestamp < 3600:
                     newItem.setBackground(self.brush2)
+
+                # if m % 2:
 
                 self.ui.tableFlights.setItem(m, n, newItem)
         self.ui.tableFlights.resizeColumnsToContents()
@@ -120,6 +122,7 @@ class Controller:
         if files:
             self.core.infiles = [file(infile) for infile in files]
             print(files)
+        self.setCurrent('%d files selected' % (len(files)))
 
 
 def make_controller(ui):

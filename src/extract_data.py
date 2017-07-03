@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from p_tools import time_string
 from core import airport_altitude, guess_alt_ths
@@ -14,6 +13,7 @@ class Metrics:
         self.dataExtractor = dataExtractor
         self.epoch_now = 0
         self.dead = False
+        self.line_count = 0
 
         # self.op32R = '32R'
         # self.op32L = '32L'
@@ -26,7 +26,6 @@ class Metrics:
 
     def run(self, infile, icao_filter):
         filepath = infile.name
-        master_name = os.path.splitext(os.path.basename(filepath))[0]
 
         try:
             database = open(filepath, 'r')
@@ -36,6 +35,8 @@ class Metrics:
         print_time = True
         prev_epoch = 0
         for i, master_line in enumerate(database):
+            self.line_count += 1
+
             if i == 0:  # skip header
                 continue
             if self.dead:
@@ -55,6 +56,9 @@ class Metrics:
                     print time_string(self.epoch_now) + ' ...'
                     self.dataExtractor.dispTime(time_string(self.epoch_now))
                     print_time = False
+                    # progress bar
+                    self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
+                                                                          self.dataExtractor.num_lines)
             else:
                 print_time = True
 
@@ -207,6 +211,8 @@ class Metrics:
                                 if current_flight.operations:
                                     current_flight.operations[-1].set_alt_ths_timestamp(
                                         self.epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
+
+        database.close()
 
     def stop(self):
         self.dead = True
