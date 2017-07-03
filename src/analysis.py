@@ -25,7 +25,7 @@ class FlightsLog:
                     guess_log_file.write('\n')
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                                         ('{:<8}'.format(operation.flight.call), '{:6}'.format(operation.flight.aircraft.icao),
+                                         ('{:<8}'.format(operation.flight.callsign.call), '{:6}'.format(operation.flight.aircraft.icao),
                                           '{:4}'.format(operation.flight.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
                                           date, '{:1}'.format(operation.guess_count),'{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
@@ -42,30 +42,20 @@ class ConfigLog:
     configuration. Last time for a config end is the last landing in such config. Takes as input the final_guess_list'''
 
     def __init__(self, final_op_list):
-        self.config_list = [[]]  # [[times, config, runways...], [times, config, runways...]]
+        self.config_list = []  # [Config, ...]
+        final_op_list.sort()
         self.final_op_list = final_op_list
-        self.ops = ['32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R']  # for now no missed runway identification.   , '8L'+miss_event[0], '8R'+miss_event[0]]
+        self.ops = ['32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R']
 
-    # def add_config(self, from_time, until_time, config, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss32L, miss32R, mis18L, mis18R):
-    #     self.config_str = self.config_str + "%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (from_time, until_time, config, '{:d}'.format(arr32L), '{:d}'.format(arr32R),
-    #                    '{:d}'.format(dep36L), '{:d}'.format(dep36R),  '{:d}'.format(arr18L), '{:d}'.format(arr18R),
-    #                    '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss32L), '{:d}'.format(miss32R), '{:d}'.format(mis18L), '{:d}'.format(mis18R))
-    #     return self.config_str
-    def add_config(self, from_time, until_time, config, total, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss, slack):
-        self.config_str = self.config_str + "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
-        from_time, until_time, config, '{:d}'.format(total), '{:d}'.format(arr32L), '{:d}'.format(arr32R),
-        '{:d}'.format(dep36L), '{:d}'.format(dep36R), '{:d}'.format(arr18L), '{:d}'.format(arr18R),
-        '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss), '{:.2f}'.format(slack))
-        return self.config_str
-
-    def add_config_list(self, from_time, until_time, config, total, arr32L, arr32R, dep36L, dep36R, arr18L, arr18R, dep14L, dep14R, miss, slack):
-        self.config_list.append([from_time, until_time, config, '{:d}'.format(total), '{:d}'.format(arr32L), '{:d}'.format(arr32R),
-        '{:d}'.format(dep36L), '{:d}'.format(dep36R), '{:d}'.format(arr18L), '{:d}'.format(arr18R),
-        '{:d}'.format(dep14L), '{:d}'.format(dep14R), '{:d}'.format(miss), '{:.2f}'.format(slack)])
+    def add_config(self, config, from_epoch, until_epoch, runway_list, missed):
+        slack = 0.0
+        if self.config_list:
+            self.config_list[-1].slack = from_epoch - self.config_list[-1].until_epoch
+        self.config_list.append(Config(config, from_epoch, until_epoch, runway_list, missed, slack))
 
     def write(self, path, master_name):
         log_file_name = '%s\\%s_configLog.txt' % (path, master_name)
-        config_head = "From time\t\t\tUntil time\t\t\tCon\tTot\t"
+        config_head = "From time\t\t\tUntil time\t\t\tDur(h)\tCon\tTot\t"
         for op in self.ops:
             config_head += op + '\t'
         config_head += 'mis\tSlack capacity(min)\n'
@@ -73,7 +63,7 @@ class ConfigLog:
         self.run()
         string = ''
         for config in self.config_list:
-            for item in config:
+            for item in config.listed():
                 string += item + '\t'
             string = string[0:-2] + '\n'
 
@@ -82,24 +72,24 @@ class ConfigLog:
 
     def run(self):
         if self.final_op_list:
-            # final_op_list = [[call, icao, typ, timestamp, performance, operation_comment, vrate, incli, gs, track], []...]
+            # final_op_list = [[operation], []...]
             first_epoch = None
-            last_conf = None
+            last_config = None
             config = None
             for operation in self.final_op_list:
                 if operation.op_timestamp is not None and operation.op_runway:
                     first_epoch = operation.op_timestamp
                     if '32' in operation.op_runway or '36' in operation.op_runway:
-                        last_conf = 'N'
+                        last_config = 'N'
                         config = 'N'
                     else:
-                        last_conf = 'S'
+                        last_config = 'S'
                         config = 'S'
                     break
 
-            from_time = time_string(first_epoch)
+            from_epoch = first_epoch
             last_epoch = self.final_op_list[-1].op_timestamp
-            last_time = time_string(last_epoch)
+            until_epoch = last_epoch
 
             counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]  # 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R...
             total_count = 0
@@ -114,47 +104,62 @@ class ConfigLog:
                 if op_timestamp is not None and op and prev_op:
                     if '32' in op or '36' in op:  # now NORTH
                         if '18' in prev_op or '14' in prev_op:  # prev south
-                            until_time = time_string(prev_timestamp)  # latest south op
+                            until_epoch = prev_timestamp
                             log = True
                             config = 'S'
-                            last_conf = 'N'
-                            print 'change of configuration from south to north'
+                            last_config = 'N'
 
                     elif '18' in op or '14' in op:  # now SOUTH
                         if '32' in prev_op or '36' in prev_op:  # prev north
-                            until_time = time_string(prev_timestamp)
+                            until_epoch = prev_timestamp
                             log = True
                             config = 'N'
-                            last_conf = 'S'
-                            print 'change of configuration from north to south'
+                            last_config = 'S'
 
                     if log:
-                        slack = (op_timestamp - prev_timestamp) / 60.0
-                        self.add_config_list(from_time, until_time, config, total_count, counter[0], counter[1],
-                                        counter[2], counter[3], counter[4], counter[5],
-                                        counter[6], counter[7], miss_count, slack)
+                        self.add_config(config, from_epoch, until_epoch, counter, miss_count)
                         counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]
                         total_count = 0
                         miss_count = 0
                         log = False
-                        from_time = time_string(op_timestamp)  # first south op
+                        from_epoch = op_timestamp
 
                     try:
                         total_count += 1
                         counter[self.ops.index(op)] += 1
-                        if 'missed' in operation.op_comment:
+                        if operation.missed_detected:
                             miss_count += 1
                     except Exception:
-                        print type(op_timestamp)
+                        print 'error in op_timestamp, type: ' + type(op_timestamp)  # doesnt make sense this here...
 
                     prev_timestamp = operation.op_timestamp
                     prev_op = operation.op_runway
 
-            self.add_config_list(from_time, last_time, last_conf, total_count, counter[0], counter[1],
-                            counter[2], counter[3], counter[4], counter[5],
-                            counter[6], counter[7], miss_count, slack=0)
+            self.add_config(last_config, from_epoch, last_epoch, counter, miss_count)
 
-        return self.config_list
+        return sorted(self.config_list)
+
+
+class Config:
+    def __init__(self, config, from_epoch, until_epoch, runway_list, missed, slack):
+        self.config = config
+        self.from_epoch = from_epoch
+        self.until_epoch = until_epoch
+        self.duration = (self.until_epoch - self.from_epoch) / 3600.0
+        self.runway_list = runway_list  # [] 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R
+        self.missed = missed
+        self.slack = slack
+
+    def __lt__(self, other):
+        return self.from_epoch < other.from_epoch
+
+    def listed(self):
+        return [time_string(self.from_epoch), time_string(self.until_epoch), '{:.2f}'.format(self.duration),
+                self.config, '{:d}'.format(sum(self.runway_list)), '{:d}'.format(self.runway_list[0]),
+                '{:d}'.format(self.runway_list[1]), '{:d}'.format(self.runway_list[2]),
+                '{:d}'.format(self.runway_list[3]), '{:d}'.format(self.runway_list[4]),
+                '{:d}'.format(self.runway_list[5]), '{:d}'.format(self.runway_list[6]),
+                '{:d}'.format(self.runway_list[7]), '{:d}'.format(self.missed), '{:.2f}'.format(self.slack/60.0)]
 
 
 class OpByType:

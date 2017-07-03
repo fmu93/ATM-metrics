@@ -22,7 +22,8 @@ class Aircraft:
 
     def set_call(self, new_call, epoch):
         if not self.flights_dict.keys():
-            self.flights_dict[Callsign(self, new_call, epoch)] = Flight(new_call, self, epoch)
+            new_callsign = Callsign(self, new_call, epoch)
+            self.flights_dict[new_callsign] = Flight(new_callsign, self, epoch)
             return
 
         current_callsign = sortedDictKeys(self.flights_dict)[-1]
@@ -32,7 +33,8 @@ class Aircraft:
             if epoch - current_callsign.last_seen < 3600:  # same flight
                 self.flights_dict[current_callsign].set_last_seen(epoch)
             else:  # new flight
-                self.flights_dict[Callsign(self, new_call, epoch)] = Flight(new_call, self, epoch)
+                new_callsign = Callsign(self, new_call, epoch)
+                self.flights_dict[new_callsign] = Flight(new_callsign, self, epoch)
 
         elif current_callsign.call == no_call:
             if new_call == no_call:
@@ -52,12 +54,13 @@ class Aircraft:
             new_callsign = Callsign(self, new_call, epoch)
             self.flights_dict[new_callsign] = self.flights_dict[current_callsign]
             self.flights_dict.pop(current_callsign, None)
-            self.flights_dict[new_callsign].call = new_call
+            self.flights_dict[new_callsign].callsign = new_callsign
             self.flights_dict[new_callsign].set_last_seen(epoch)
 
         else:
             # simply a new different call
-            self.flights_dict[Callsign(self, new_call, epoch)] = Flight(new_call, self, epoch)
+            new_callsign = Callsign(self, new_call, epoch)
+            self.flights_dict[new_callsign] = Flight(new_callsign, self, epoch)
 
     def get_current_flight(self):
         if self.flights_dict.keys():
@@ -111,10 +114,10 @@ class Callsign:
 
 
 class Flight:
-    def __init__(self, call, aircraft, epoch):
+    def __init__(self, callsign, aircraft, epoch):
         self.first_time = epoch
         self.aircraft = aircraft
-        self.call = call
+        self.callsign = callsign
         self.last_seen = epoch
         self.operations = []  # [Operation()]
         self.waypoints = []  # ['waypoint_name', ...]
@@ -131,7 +134,7 @@ class Flight:
             # more than 10 minutes with no calls and new guess is showing up, make new 'no_call' flight
             self.aircraft.set_call(no_call, epoch)
             # don't forget to assign this new guess to the new flight
-            if self.aircraft.get_current_flight().call != no_call:
+            if self.aircraft.get_current_flight().callsign.call != no_call:
                 # 'maximum recursion depth exceeded in cmp' when no_call
                 self.aircraft.get_current_flight().set_guess(epoch, NorS, EorW, track, vrate, inclin, gs, zone)
             return
@@ -423,7 +426,7 @@ class Operation:
         return self
 
     def get_op_rows(self):
-        return [self.flight.call, self.flight.aircraft.icao, self.flight.aircraft.type,
+        return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.type,
                 ('{:.0f}'.format(self.op_timestamp) if self.op_timestamp else 'None'),
                 time_string(self.op_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()), '{:3.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,

@@ -35,16 +35,17 @@ class DataExtractorThread(threading.Thread):
 
     def task(self):
         # TODO list and order input files to feed the extract_data.py
-        # display name of current database running
         for infile in self.infiles:
+            # display name of current database running
             print infile.name
+            self.core.controller.setCurrent(infile.name)
             # icao_filter = '4ca5bb'
             icao_filter = None
             self.extract_data.run(infile, icao_filter)
-        self.core.stop()  # TODO add label for done and progress bar
+        self.core.done()  # TODO add progress bar
 
     def dispTime(self, timeStr):
-        self.core.controller.changeClock(timeStr)
+        self.core.controller.setClock(timeStr)
 
 
 class OperationRefreshThread(threading.Thread):
@@ -86,34 +87,35 @@ class OperationRefreshThread(threading.Thread):
 
                         for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
                             if operation.op_timestamp is not None:  # TODO why are some op_timestamp None?
+                                # TODO make sure operations are properlly... if one validation makes one op but then it/
+                                # was another one, both remain instead of overwritting
                                 # final_operations_list.append(operation)
                                 self.operation_dict[operation] = operation
                                 new_op_list.append(operation)
         self.display()
         new_op_list.sort()
         print 'Refreshing ' + str(len(new_op_list)) + ' of ' + str(len(self.operation_dict.keys())) + ' flights:'
-        for op in new_op_list:
-            print op.get_op_rows()
 
-    def display(self):  # TODO display config
+    def display(self):
         op_list = []
         for op in (self.operation_dict.values()):
             op_list.append(op)
-        op_list.sort(reverse=True)
+
+        op_list.sort()
         config_list = analysis.ConfigLog(op_list).run()
 
+        config_list.sort(reverse=True)
         self.core.controller.update_tableConfig(config_list)
+        op_list.sort(reverse=True)
         self.core.controller.update_tableFlights(op_list)
 
 
-class Core:
+class Core:  # TODO use builtin time formats
     def __init__(self):
         self.dataExtractor = None
         self.operationRefresh = None
         self.controller = None
         self.infiles = None
-        # self.infiles = [file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160812dump1090 - Copy.hex')
-        #     ,file('C:/Users/Croket/Python workspace/ATM metrics/data/digest_20160813dump1090.hex')]
 
     def run(self):
         if self.infiles:
@@ -123,14 +125,22 @@ class Core:
             operationRefreshThread = threading.Thread(target=self.operationRefresh.run, args=())
             dataExtractorThread.start()
             operationRefreshThread.start()
+            self.controller.setHap('Running')
+            self.controller.update_progressbar(0)
 
     def stop(self):
         try:
             self.dataExtractor.shutdown()
             self.operationRefresh.shutdown()
             print 'threads killed!'
+            self.controller.setHap('Threads killed!')
         except Exception:
             print 'Can\'t kill threads'
+            self.controller.setHap('Can\'t kill threads')
+
+    def done(self):
+        self.operationRefresh.shutdown()
+        self.controller.setHap('Done')
 
     def set_controller(self, controller):
         self.controller = controller

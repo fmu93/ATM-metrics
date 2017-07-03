@@ -4,8 +4,8 @@ import sys
 
 flight_headers = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','pos_count','V(fpm)','GS(kts)','(deg)',
               'track','runway','change_comm','miss_comm','op_comm', 'waypoints']
-config_headers = ['From time', 'Until time', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
-                  'missed', 'slack (min)']
+config_headers = ['From time', 'Until time', 'Dur (h)', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
+                  'missed', 'Slack (min)']
 
 
 class Controller:
@@ -22,7 +22,7 @@ class Controller:
         self.ui.tableFlights.setRowCount(200)
         self.ui.tableFlights.setHorizontalHeaderLabels(flight_headers)
         self.ui.tableFlights.resizeColumnsToContents()
-        self.ui.tableConfig.setColumnCount(14)
+        self.ui.tableConfig.setColumnCount(15)
         self.ui.tableConfig.setRowCount(5)
         self.ui.tableConfig.setHorizontalHeaderLabels(config_headers)
         self.ui.tableConfig.resizeColumnsToContents()
@@ -42,34 +42,61 @@ class Controller:
         self.brush3 = QtGui.QBrush(QtGui.QColor('#FF6B68'))  # last 10 min
         self.brush3.setStyle(QtCore.Qt.SolidPattern)
 
+        self.brush4 = QtGui.QBrush(QtGui.QColor('#C6EBBE'))  # last 10 min
+        self.brush4.setStyle(QtCore.Qt.SolidPattern)
+        self.brush5 = QtGui.QBrush(QtGui.QColor('#A9DBB8'))  # last 10 min
+        self.brush5.setStyle(QtCore.Qt.SolidPattern)
+        self.brush6 = QtGui.QBrush(QtGui.QColor('#7CA5B8'))  # last 10 min
+        self.brush6.setStyle(QtCore.Qt.SolidPattern)
+        self.brush7 = QtGui.QBrush(QtGui.QColor('#FAF8D4'))  # last 10 min
+        self.brush7.setStyle(QtCore.Qt.SolidPattern)
+        self.brush8 = QtGui.QBrush(QtGui.QColor('#7CA5B8'))  # last 10 min
+        self.brush8.setStyle(QtCore.Qt.SolidPattern)
+
     def update_tableFlights(self, op_list):
+        op_list.sort(reverse=True)
         self.ui.tableFlights.clearContents()
         epoch_now = self.core.dataExtractor.extract_data.epoch_now
         for m, op in enumerate(op_list):
             # self.tableWidget.setRowCount(m)
             for n, item in enumerate(op.get_op_rows()):
-                if epoch_now - op.op_timestamp < 900:  # TODO coloring based on current time and not latest op
-                    brush = self.brush3
-                elif epoch_now - op.op_timestamp < 3600:
-                    brush = self.brush2
-                else:
-                    brush = self.brush1
                 newItem = QtWidgets.QTableWidgetItem(item)
-                newItem.setBackground(brush)
+                if epoch_now - op.op_timestamp < 900:  # TODO coloring based on current time and not latest op
+                    newItem.setBackground(self.brush3)
+                elif epoch_now - op.op_timestamp < 3600:
+                    newItem.setBackground(self.brush2)
+
                 self.ui.tableFlights.setItem(m, n, newItem)
         self.ui.tableFlights.resizeColumnsToContents()
 
     def update_tableConfig(self, config_list):
         self.ui.tableConfig.clearContents()
         for m, config in enumerate(config_list):
-            for n, item in enumerate(config):
+            for n, item in enumerate(config.listed()):
                 newItem = QtWidgets.QTableWidgetItem(item)
+                if n < 3 or n > 12:
+                    newItem.setBackground(self.brush7)
+                elif 2 < n < 5:
+                    newItem.setBackground(self.brush6)
+                elif 4 < n < 9:
+                    newItem.setBackground(self.brush4)
+                elif 8 < n < 13:
+                    newItem.setBackground(self.brush5)
+
                 self.ui.tableConfig.setItem(m, n, newItem)
         self.ui.tableConfig.resizeColumnsToContents()
 
-
-    def changeClock(self, timeStr):
+    def setClock(self, timeStr):
         self.ui.lblTime.setText(timeStr)
+
+    def setCurrent(self, string):
+        self.ui.lblCurrent.setText(string)
+
+    def setHap(self, string):
+        self.ui.lblHap.setText(string)
+
+    def update_progressbar(self, val):
+        self.ui.progressBar.setValue(val)
 
     def closeEvent(self, QCloseEvent):
         QCloseEvent.ignore()
