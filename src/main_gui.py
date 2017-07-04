@@ -2,23 +2,22 @@
 
 # Form implementation generated from reading ui file 'main2.ui'
 #
-# Created: Mon Jul 03 19:36:40 2017
+# Created: Tue Jul 04 12:04:48 2017
 #      by: PyQt5 UI code generator 5.3.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import controller
-import sys
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
+import random
+import numpy as np
 
 class Ui_Form(object):
     def setupUi(self, Form):
         self.form = Form
         Form.setObjectName("Form")
-        Form.resize(802, 646)
+        Form.resize(750, 646)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -132,6 +131,7 @@ class Ui_Form(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tableConfig.sizePolicy().hasHeightForWidth())
         self.tableConfig.setSizePolicy(sizePolicy)
+        self.tableConfig.setMinimumSize(QtCore.QSize(0, 80))
         font = QtGui.QFont()
         font.setPointSize(10)
         self.tableConfig.setFont(font)
@@ -139,10 +139,12 @@ class Ui_Form(object):
         self.tableConfig.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tableConfig.setAlternatingRowColors(True)
         self.tableConfig.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        self.tableConfig.setShowGrid(True)
         self.tableConfig.setGridStyle(QtCore.Qt.SolidLine)
         self.tableConfig.setRowCount(1)
         self.tableConfig.setColumnCount(15)
         self.tableConfig.setObjectName("tableConfig")
+        self.tableConfig.horizontalHeader().setCascadingSectionResizes(False)
         self.tableConfig.horizontalHeader().setDefaultSectionSize(100)
         self.tableConfig.horizontalHeader().setHighlightSections(True)
         self.tableConfig.horizontalHeader().setSortIndicatorShown(True)
@@ -158,14 +160,18 @@ class Ui_Form(object):
         self.verticalLayout_5.addWidget(self.lbl_histo)
 
         self.matplotlibWidget = MatplotlibWidget(self.Configuration)
-
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.matplotlibWidget.sizePolicy().hasHeightForWidth())
         self.matplotlibWidget.setSizePolicy(sizePolicy)
+        self.matplotlibWidget.setMaximumHeight(250)
         self.matplotlibWidget.setObjectName("matplotlibWidget")
+        # self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.matplotlibWidget)
+        # self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        # self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.verticalLayout_5.addWidget(self.matplotlibWidget)
+
         self.gridLayout_3.addLayout(self.verticalLayout_5, 0, 0, 1, 1)
         self.tabWidget.addTab(self.Configuration, "")
         self.Operations = QtWidgets.QWidget()
@@ -393,6 +399,48 @@ class Ui_Form(object):
     def set_controller(self, controller2):
         self.controller = controller2
 
+class MatplotlibWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super(MatplotlibWidget, self).__init__(parent)
+
+        self.figure = Figure()
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        # self.canvas.resize(100, 100)
+
+        self.axes = self.figure.add_subplot(111)
+
+        self.layoutVertical = QtWidgets.QVBoxLayout(self)
+        self.layoutVertical.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.layoutVertical.setContentsMargins(0, 0, 0, 0)
+        self.layoutVertical.addWidget(self.canvas)
+
+    def update_figure(self):  # TODO plot histogram
+        # Build a list of 4 random integers between 0 and 10 (both inclusive)
+        l = [random.randint(0, 10) for i in range(5)]
+
+        self.axes.plot([0, 1, 2, 3, 4], l, 'r')
+
+        N = 5
+        menMeans = l
+        womenMeans = (25, 32, 34, 20, 25)
+        menStd = (2, 3, 4, 1, 2)
+        womenStd = (3, 5, 2, 3, 3)
+        ind = np.arange(N)  # the x locations for the groups
+        width = 0.35  # the width of the bars: can also be len(x) sequence
+
+        p1 = self.axes.bar(ind, menMeans, width, color='#d62728', yerr=menStd)
+        p2 = self.axes.bar(ind, womenMeans, width,
+                     bottom=menMeans, yerr=womenStd)
+
+        # plt.ylabel('Scores')
+        # plt.title('Scores by group and gender')
+        # plt.xticks(ind, ('G1', 'G2', 'G3', 'G4', 'G5'))
+        # plt.yticks(np.arange(0, 81, 10))
+        # plt.legend((p1[0], p2[0]), ('Men', 'Women'))
+
+
+        self.canvas.draw()
+
 
 class Form(QtWidgets.QWidget):
     def __init__(self):
@@ -405,20 +453,10 @@ class Form(QtWidgets.QWidget):
     def set_ui(self, ui):
         self.ui = ui
 
-class MatplotlibWidget(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        super(MatplotlibWidget, self).__init__(parent)
-
-        self.figure = Figure()
-        self.canvas = FigureCanvasQTAgg(self.figure)
-
-        self.axis = self.figure.add_subplot(111)
-
-        self.layoutVertical = QtWidgets.QVBoxLayout(self)
-        self.layoutVertical.addWidget(self.canvas)
-
 
 def run():
+    import controller
+    import sys
     app = QtWidgets.QApplication(sys.argv)
     form = Form()
     ui = Ui_Form()

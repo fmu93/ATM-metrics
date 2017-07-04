@@ -194,3 +194,7 @@ class OpByType:
             op_by_type.write('%s\t%s\n\n' % ('AType', 'times'))
             for i, ele in enumerate(typ_list):
                 op_by_type.write('%s\t%s\n' % (ele[0], ele[1]))
+
+class thru_histogram:
+    def __init__(self):
+        self.bin_size = 15  # minutes

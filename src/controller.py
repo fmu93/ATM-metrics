@@ -1,6 +1,8 @@
 import core
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
+from main_gui import MatplotlibWidget
+import random
 
 flight_headers = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','pos_count','V(fpm)','GS(kts)','(deg)',
               'track','runway','change_comm','miss_comm','op_comm', 'waypoints']
@@ -41,6 +43,9 @@ class Controller:
         self.color6 = QtGui.QColor('#7CA5B8')  # blue
         self.color7 = QtGui.QColor('#FAF8D4')  #
         self.color8 = QtGui.QColor('#7CA5B8')  # blue 2
+
+        # plot
+        self.histo = self.ui.matplotlibWidget
 
     def closeEvent(self, QCloseEvent):
         QCloseEvent.ignore()
@@ -124,7 +129,7 @@ class ThreadSample(QtCore.QThread):
                 self.controller.ui.tableConfig.setItem(m, n, newItem)
         self.controller.ui.tableConfig.resizeColumnsToContents()
 
-    @QtCore.pyqtSlot()
+    @QtCore.pyqtSlot(str)
     def setClock(self, timeStr):
         self.controller.ui.lblTime.setText(timeStr)
 
@@ -136,9 +141,13 @@ class ThreadSample(QtCore.QThread):
     def setHap(self, string):
         self.controller.ui.lblHap.setText(string)
 
-    @QtCore.pyqtSlot()
+    @QtCore.pyqtSlot(float)
     def update_progressbar(self, val):
         self.controller.ui.progressBar.setValue(val)
+
+    @QtCore.pyqtSlot()
+    def update_histo(self):
+        self.controller.histo.update_figure()
 
 
 def make_controller(ui):

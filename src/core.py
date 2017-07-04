@@ -128,6 +128,7 @@ class OperationRefreshThread(threading.Thread):
         self.core.controller.threadSample.update_tableConfig(config_list)
         op_list.sort(reverse=True)
         self.core.controller.threadSample.update_tableFlights(op_list)
+        self.core.controller.histo.update_figure()
 
 
 class Core:
