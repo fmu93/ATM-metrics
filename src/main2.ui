@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>802</width>
+    <width>750</width>
     <height>646</height>
    </rect>
   </property>
@@ -66,7 +66,35 @@
         </widget>
        </item>
        <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <widget class="QLabel" name="lblTime">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>80</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -232,6 +260,12 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>80</height>
+              </size>
+             </property>
              <property name="font">
               <font>
                <pointsize>10</pointsize>
@@ -249,6 +283,9 @@
              <property name="selectionMode">
               <enum>QAbstractItemView::NoSelection</enum>
              </property>
+             <property name="showGrid">
+              <bool>true</bool>
+             </property>
              <property name="gridStyle">
               <enum>Qt::SolidLine</enum>
              </property>
@@ -256,11 +293,14 @@
               <bool>true</bool>
              </property>
              <property name="rowCount">
-              <number>5</number>
+              <number>1</number>
              </property>
              <property name="columnCount">
-              <number>14</number>
+              <number>15</number>
              </property>
+             <attribute name="horizontalHeaderCascadingSectionResizes">
+              <bool>false</bool>
+             </attribute>
              <attribute name="horizontalHeaderDefaultSectionSize">
               <number>100</number>
              </attribute>
@@ -271,13 +311,10 @@
               <bool>true</bool>
              </attribute>
              <attribute name="horizontalHeaderStretchLastSection">
-              <bool>true</bool>
+              <bool>false</bool>
              </attribute>
              <row/>
-             <row/>
-             <row/>
-             <row/>
-             <row/>
+             <column/>
              <column/>
              <column/>
              <column/>
@@ -308,13 +345,14 @@
             </widget>
            </item>
            <item>
-            <widget class="QGraphicsView" name="graphicsView">
+            <widget class="QWidget" name="matplotlibWidget" native="true">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2"/>
             </widget>
            </item>
           </layout>
@@ -403,7 +441,7 @@
               <number>15</number>
              </property>
              <attribute name="horizontalHeaderStretchLastSection">
-              <bool>true</bool>
+              <bool>false</bool>
              </attribute>
              <row/>
              <row/>

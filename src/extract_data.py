@@ -57,7 +57,7 @@ class Metrics:
                     self.dataExtractor.dispTime(time_string(self.epoch_now))
                     print_time = False
                     # progress bar
-                    self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
+                    self.dataExtractor.core.controller.threadSample.update_progressbar(100 * self.line_count /
                                                                           self.dataExtractor.num_lines)
             else:
                 print_time = True

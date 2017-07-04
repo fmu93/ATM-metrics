@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main2.ui'
 #
-# Created: Thu Jun 29 10:44:13 2017
+# Created: Mon Jul 03 19:36:40 2017
 #      by: PyQt5 UI code generator 5.3.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -10,6 +10,9 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import controller
 import sys
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -43,7 +46,15 @@ class Ui_Form(object):
         self.btnQuit = QtWidgets.QPushButton(Form)
         self.btnQuit.setObjectName("btnQuit")
         self.horizontalLayout.addWidget(self.btnQuit)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
         self.lblTime = QtWidgets.QLabel(Form)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lblTime.sizePolicy().hasHeightForWidth())
+        self.lblTime.setSizePolicy(sizePolicy)
+        self.lblTime.setMinimumSize(QtCore.QSize(80, 0))
         self.lblTime.setObjectName("lblTime")
         self.horizontalLayout.addWidget(self.lblTime)
         self.verticalLayout.addLayout(self.horizontalLayout)
@@ -60,8 +71,8 @@ class Ui_Form(object):
         self.lblCurrent = QtWidgets.QLabel(Form)
         self.lblCurrent.setObjectName("lblCurrent")
         self.horizontalLayout_2.addWidget(self.lblCurrent)
-        spacerItem = QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem)
+        spacerItem1 = QtWidgets.QSpacerItem(80, 20, QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem1)
         self.lblHap = QtWidgets.QLabel(Form)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -76,7 +87,7 @@ class Ui_Form(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
         self.progressBar.setSizePolicy(sizePolicy)
-        self.progressBar.setProperty("value", 25)
+        self.progressBar.setProperty("value", 0)
         self.progressBar.setTextVisible(True)
         self.progressBar.setOrientation(QtCore.Qt.Horizontal)
         self.progressBar.setInvertedAppearance(False)
@@ -84,8 +95,8 @@ class Ui_Form(object):
         self.progressBar.setObjectName("progressBar")
         self.horizontalLayout_2.addWidget(self.progressBar)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
-        spacerItem1 = QtWidgets.QSpacerItem(20, 30, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        self.verticalLayout.addItem(spacerItem1)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 30, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.verticalLayout.addItem(spacerItem2)
         self.line = QtWidgets.QFrame(Form)
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -124,13 +135,18 @@ class Ui_Form(object):
         font = QtGui.QFont()
         font.setPointSize(10)
         self.tableConfig.setFont(font)
+        self.tableConfig.setAutoFillBackground(False)
         self.tableConfig.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tableConfig.setAlternatingRowColors(True)
         self.tableConfig.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
         self.tableConfig.setGridStyle(QtCore.Qt.SolidLine)
-        self.tableConfig.setRowCount(5)
-        self.tableConfig.setColumnCount(14)
+        self.tableConfig.setRowCount(1)
+        self.tableConfig.setColumnCount(15)
         self.tableConfig.setObjectName("tableConfig")
+        self.tableConfig.horizontalHeader().setDefaultSectionSize(100)
+        self.tableConfig.horizontalHeader().setHighlightSections(True)
+        self.tableConfig.horizontalHeader().setSortIndicatorShown(True)
+        self.tableConfig.horizontalHeader().setStretchLastSection(False)
         self.verticalLayout_5.addWidget(self.tableConfig)
         self.lbl_histo = QtWidgets.QLabel(self.Configuration)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
@@ -140,30 +156,32 @@ class Ui_Form(object):
         self.lbl_histo.setSizePolicy(sizePolicy)
         self.lbl_histo.setObjectName("lbl_histo")
         self.verticalLayout_5.addWidget(self.lbl_histo)
-        self.graphicsView = QtWidgets.QGraphicsView(self.Configuration)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+        self.matplotlibWidget = MatplotlibWidget(self.Configuration)
+
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.graphicsView.sizePolicy().hasHeightForWidth())
-        self.graphicsView.setSizePolicy(sizePolicy)
-        self.graphicsView.setObjectName("graphicsView")
-        self.verticalLayout_5.addWidget(self.graphicsView)
+        sizePolicy.setHeightForWidth(self.matplotlibWidget.sizePolicy().hasHeightForWidth())
+        self.matplotlibWidget.setSizePolicy(sizePolicy)
+        self.matplotlibWidget.setObjectName("matplotlibWidget")
+        self.verticalLayout_5.addWidget(self.matplotlibWidget)
         self.gridLayout_3.addLayout(self.verticalLayout_5, 0, 0, 1, 1)
         self.tabWidget.addTab(self.Configuration, "")
-        self.Flights = QtWidgets.QWidget()
+        self.Operations = QtWidgets.QWidget()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.Flights.sizePolicy().hasHeightForWidth())
-        self.Flights.setSizePolicy(sizePolicy)
-        self.Flights.setAutoFillBackground(False)
-        self.Flights.setObjectName("Flights")
-        self.gridLayout_2 = QtWidgets.QGridLayout(self.Flights)
+        sizePolicy.setHeightForWidth(self.Operations.sizePolicy().hasHeightForWidth())
+        self.Operations.setSizePolicy(sizePolicy)
+        self.Operations.setAutoFillBackground(False)
+        self.Operations.setObjectName("Operations")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.Operations)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.verticalLayout_7 = QtWidgets.QVBoxLayout()
         self.verticalLayout_7.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_7.setObjectName("verticalLayout_7")
-        self.lbl_flights = QtWidgets.QLabel(self.Flights)
+        self.lbl_flights = QtWidgets.QLabel(self.Operations)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -171,7 +189,7 @@ class Ui_Form(object):
         self.lbl_flights.setSizePolicy(sizePolicy)
         self.lbl_flights.setObjectName("lbl_flights")
         self.verticalLayout_7.addWidget(self.lbl_flights)
-        self.tableFlights = QtWidgets.QTableWidget(self.Flights)
+        self.tableFlights = QtWidgets.QTableWidget(self.Operations)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -189,9 +207,10 @@ class Ui_Form(object):
         self.tableFlights.setRowCount(200)
         self.tableFlights.setColumnCount(15)
         self.tableFlights.setObjectName("tableFlights")
+        self.tableFlights.horizontalHeader().setStretchLastSection(False)
         self.verticalLayout_7.addWidget(self.tableFlights)
         self.gridLayout_2.addLayout(self.verticalLayout_7, 0, 0, 1, 1)
-        self.tabWidget.addTab(self.Flights, "")
+        self.tabWidget.addTab(self.Operations, "")
         self.Settings = QtWidgets.QWidget()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -285,8 +304,8 @@ class Ui_Form(object):
         self.btnSetRate.setObjectName("btnSetRate")
         self.horizontalLayout_3.addWidget(self.btnSetRate)
         self.gridLayout.addLayout(self.horizontalLayout_3, 0, 2, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem2, 7, 2, 1, 1)
+        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem3, 7, 2, 1, 1)
         self.line_2 = QtWidgets.QFrame(self.Settings)
         self.line_2.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -309,8 +328,8 @@ class Ui_Form(object):
         self.label_4 = QtWidgets.QLabel(self.Settings)
         self.label_4.setObjectName("label_4")
         self.gridLayout_5.addWidget(self.label_4, 1, 0, 1, 1)
-        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem3, 2, 1, 1, 1)
+        spacerItem4 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout_5.addItem(spacerItem4, 2, 1, 1, 1)
         self.label_3 = QtWidgets.QLabel(self.Settings)
         self.label_3.setObjectName("label_3")
         self.gridLayout_5.addWidget(self.label_3, 0, 0, 1, 1)
@@ -351,7 +370,7 @@ class Ui_Form(object):
         self.btnQuit.setText(_translate("Form", "Quit"))
         self.lblTime.setText(_translate("Form", "..."))
         self.lblProcess.setText(_translate("Form", "Process..."))
-        self.lblCurrent.setText(_translate("Form", "...current filename"))
+        self.lblCurrent.setText(_translate("Form", "..."))
         self.lblHap.setText(_translate("Form", "Ready..."))
         self.lbl_config.setText(_translate("Form", "Configuration table"))
         self.tableConfig.setSortingEnabled(True)
@@ -359,7 +378,7 @@ class Ui_Form(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Configuration), _translate("Form", "Configuration"))
         self.lbl_flights.setText(_translate("Form", "Operations table"))
         self.tableFlights.setSortingEnabled(True)
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Flights), _translate("Form", "Operations"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Operations), _translate("Form", "Operations"))
         self.lbl_start_time.setText(_translate("Form", "Start date and time (UTC)"))
         self.lbl_end_time.setText(_translate("Form", "End date and time (UTC)"))
         self.label_2.setText(_translate("Form", "Refresh rate: "))
@@ -381,6 +400,22 @@ class Form(QtWidgets.QWidget):
 
     def closeEvent(self, QCloseEvent):
         QCloseEvent.ignore()
+        self.ui.controller.close_application()
+
+    def set_ui(self, ui):
+        self.ui = ui
+
+class MatplotlibWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super(MatplotlibWidget, self).__init__(parent)
+
+        self.figure = Figure()
+        self.canvas = FigureCanvasQTAgg(self.figure)
+
+        self.axis = self.figure.add_subplot(111)
+
+        self.layoutVertical = QtWidgets.QVBoxLayout(self)
+        self.layoutVertical.addWidget(self.canvas)
 
 
 def run():
@@ -389,6 +424,9 @@ def run():
     ui = Ui_Form()
     ui.setupUi(form)
     ui.set_controller(controller.make_controller(ui))
+    form.set_ui(ui)
     form.show()
     sys.exit(app.exec_())
+
+
 

@@ -55,17 +55,17 @@ class DataExtractorThread(threading.Thread):
             if not self.first_file:
                 self.first_file = self.infiles_dict[timestamp]
             print self.infiles_dict[timestamp].name
-            self.core.controller.setCurrent('File %d/%d: %s'
+            self.core.controller.threadSample.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
                                                get_file_name(self.infiles_dict[timestamp])))
             # icao_filter = '4ca5bb'
             icao_filter = None
             self.extract_data.run(self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
-        self.core.done()  # TODO add progress bar
+        self.core.done()
 
     def dispTime(self, timeStr):
-        self.core.controller.setClock(timeStr)
+        self.core.controller.threadSample.setClock(timeStr)
 
 
 class OperationRefreshThread(threading.Thread):
@@ -114,7 +114,7 @@ class OperationRefreshThread(threading.Thread):
                                 new_op_list.append(operation)
         self.display()
         new_op_list.sort()
-        print 'Refreshing ' + str(len(new_op_list)) + ' of ' + str(len(self.operation_dict.keys())) + ' flights:'
+        # print 'Refreshing ' + str(len(new_op_list)) + ' of ' + str(len(self.operation_dict.keys())) + ' flights:'
 
     def display(self):
         op_list = []
@@ -122,12 +122,12 @@ class OperationRefreshThread(threading.Thread):
             op_list.append(op)
 
         op_list.sort()
-        config_list = analysis.ConfigLog(op_list).run()
+        config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient 'only new'
 
         config_list.sort(reverse=True)
-        self.core.controller.update_tableConfig(config_list)
+        self.core.controller.threadSample.update_tableConfig(config_list)
         op_list.sort(reverse=True)
-        self.core.controller.update_tableFlights(op_list)
+        self.core.controller.threadSample.update_tableFlights(op_list)
 
 
 class Core:
@@ -145,22 +145,23 @@ class Core:
             operationRefreshThread = threading.Thread(target=self.operationRefresh.run, args=())
             dataExtractorThread.start()
             operationRefreshThread.start()
-            self.controller.setHap('Running')
-            self.controller.update_progressbar(0)
+            self.controller.threadSample.setHap('Running')
+            self.controller.threadSample.update_progressbar(0)
 
     def stop(self):
         try:
             self.dataExtractor.shutdown()
             self.operationRefresh.shutdown()
             print 'threads killed!'
-            self.controller.setHap('Threads killed!')
+            self.controller.threadSample.setHap('Threads killed!')
         except Exception:
             print 'Can\'t kill threads'
-            self.controller.setHap('Can\'t kill threads')
+            self.controller.threadSample.setHap('Can\'t kill threads')
 
     def done(self):
         self.operationRefresh.shutdown()
-        self.controller.setHap('Done')
+        self.controller.threadSample.setHap('Done')
+        # self.controller.threadSample..update_progressbar(100)
 
     def set_controller(self, controller):
         self.controller = controller

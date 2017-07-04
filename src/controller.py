@@ -12,93 +12,35 @@ class Controller:
     def __init__(self, ui):
         self.core = core.coreClass
         self.ui = ui
-        self.setTable()
-        self.connections()
-        self.set_palette()
         self.core.set_controller(self)
+        self.threadSample = ThreadSample(self, self.ui.Configuration)
 
-    def setTable(self):
+        # table
         self.ui.tableFlights.setColumnCount(15)
         self.ui.tableFlights.setRowCount(200)
         self.ui.tableFlights.setHorizontalHeaderLabels(flight_headers)
         self.ui.tableFlights.resizeColumnsToContents()
         self.ui.tableConfig.setColumnCount(15)
-        self.ui.tableConfig.setRowCount(5)
         self.ui.tableConfig.setHorizontalHeaderLabels(config_headers)
         self.ui.tableConfig.resizeColumnsToContents()
 
-    def connections(self):
+        # connections
         self.ui.btnOpen.clicked.connect(self.openFileNamesDialog)
         self.ui.btnRun.clicked.connect(self.core.run)
         self.ui.btnWrite.clicked.connect(self.core.write_analysis)
         self.ui.btnStop.clicked.connect(self.core.stop)
         self.ui.btnQuit.clicked.connect(self.close_application)
 
-    def set_palette(self):
-        self.brush1 = QtGui.QBrush(QtGui.QColor('#F7F8F9'))  # rest
-        self.brush1.setStyle(QtCore.Qt.SolidPattern)
-        self.brush2 = QtGui.QBrush(QtGui.QColor('#F7BF65'))  # last hour
-        self.brush2.setStyle(QtCore.Qt.SolidPattern)
-        self.brush3 = QtGui.QBrush(QtGui.QColor('#FF6B68'))  # last 10 min
-        self.brush3.setStyle(QtCore.Qt.SolidPattern)
+        # pallete
+        self.color1 = QtGui.QColor('#F7F8F9')  # rest
+        self.color2 = QtGui.QColor('#F7BF65')  # orange
+        self.color3 = QtGui.QColor('#FF6B68')  # light red
 
-        self.brush4 = QtGui.QBrush(QtGui.QColor('#C6EBBE'))  # last 10 min
-        self.brush4.setStyle(QtCore.Qt.SolidPattern)
-        self.brush5 = QtGui.QBrush(QtGui.QColor('#A9DBB8'))  # last 10 min
-        self.brush5.setStyle(QtCore.Qt.SolidPattern)
-        self.brush6 = QtGui.QBrush(QtGui.QColor('#7CA5B8'))  # last 10 min
-        self.brush6.setStyle(QtCore.Qt.SolidPattern)
-        self.brush7 = QtGui.QBrush(QtGui.QColor('#FAF8D4'))  # last 10 min
-        self.brush7.setStyle(QtCore.Qt.SolidPattern)
-        self.brush8 = QtGui.QBrush(QtGui.QColor('#7CA5B8'))  # last 10 min
-        self.brush8.setStyle(QtCore.Qt.SolidPattern)
-
-    def update_tableFlights(self, op_list):
-        op_list.sort(reverse=True)
-        self.ui.tableFlights.clearContents()
-        epoch_now = self.core.dataExtractor.extract_data.epoch_now
-        for m, op in enumerate(op_list):
-            # self.tableWidget.setRowCount(m)
-            for n, item in enumerate(op.get_op_rows()):
-                newItem = QtWidgets.QTableWidgetItem(item)
-                if epoch_now - op.op_timestamp < 900:  # TODO coloring of rows darker/lighter
-                    newItem.setBackground(self.brush3)
-                elif epoch_now - op.op_timestamp < 3600:
-                    newItem.setBackground(self.brush2)
-
-                # if m % 2:
-
-                self.ui.tableFlights.setItem(m, n, newItem)
-        self.ui.tableFlights.resizeColumnsToContents()
-
-    def update_tableConfig(self, config_list):
-        self.ui.tableConfig.clearContents()
-        for m, config in enumerate(config_list):
-            for n, item in enumerate(config.listed()):
-                newItem = QtWidgets.QTableWidgetItem(item)
-                if n < 3 or n > 12:
-                    newItem.setBackground(self.brush7)
-                elif 2 < n < 5:
-                    newItem.setBackground(self.brush6)
-                elif 4 < n < 9:
-                    newItem.setBackground(self.brush4)
-                elif 8 < n < 13:
-                    newItem.setBackground(self.brush5)
-
-                self.ui.tableConfig.setItem(m, n, newItem)
-        self.ui.tableConfig.resizeColumnsToContents()
-
-    def setClock(self, timeStr):
-        self.ui.lblTime.setText(timeStr)
-
-    def setCurrent(self, string):
-        self.ui.lblCurrent.setText(string)
-
-    def setHap(self, string):
-        self.ui.lblHap.setText(string)
-
-    def update_progressbar(self, val):
-        self.ui.progressBar.setValue(val)
+        self.color4 = QtGui.QColor('#C6EBBE')  # light green
+        self.color5 = QtGui.QColor('#A9DBB8')  # light green 2
+        self.color6 = QtGui.QColor('#7CA5B8')  # blue
+        self.color7 = QtGui.QColor('#FAF8D4')  #
+        self.color8 = QtGui.QColor('#7CA5B8')  # blue 2
 
     def closeEvent(self, QCloseEvent):
         QCloseEvent.ignore()
@@ -122,7 +64,81 @@ class Controller:
         if files:
             self.core.infiles = [file(infile) for infile in files]
             print(files)
-        self.setCurrent('%d files selected' % (len(files)))
+        self.threadSample.setCurrent('%d files selected' % (len(files)))
+
+
+class ThreadSample(QtCore.QThread):
+    def __init__(self, controller, parent=None):
+        super(ThreadSample, self).__init__(parent)
+        self.controller = controller
+
+    @QtCore.pyqtSlot()
+    def update_tableFlights(self, op_list):
+        op_list.sort(reverse=True)
+        self.controller.ui.tableFlights.clearContents()
+        epoch_now = self.controller.core.dataExtractor.extract_data.epoch_now
+        for m, op in enumerate(op_list):
+            for n, item in enumerate(op.get_op_rows()):
+                newItem = QtWidgets.QTableWidgetItem(item)
+                color = None
+                if epoch_now - op.op_timestamp < 900:
+                    color = self.controller.color3
+                elif epoch_now - op.op_timestamp < 3600:
+                    color = self.controller.color2
+
+                if color:
+                    if m % 2:
+                        color = color.darker(107)
+                    brush = QtGui.QBrush(color)
+                    brush.setStyle(QtCore.Qt.SolidPattern)
+                    newItem.setBackground(brush)
+
+                self.controller.ui.tableFlights.setItem(m, n, newItem)
+        self.controller.ui.tableFlights.resizeColumnsToContents()
+
+    @QtCore.pyqtSlot()
+    def update_tableConfig(self, config_list):
+        self.controller.ui.tableConfig.clearContents()
+        for m, config in enumerate(config_list):
+            if m == self.controller.ui.tableConfig.rowCount():
+                self.controller.ui.tableConfig.setRowCount(m+1)
+            for n, item in enumerate(config.listed()):
+                newItem = QtWidgets.QTableWidgetItem(item)
+                color = None
+                if n < 3 or n > 12:
+                    color = self.controller.color7
+                elif 2 < n < 5:
+                    color = self.controller.color6
+                elif 4 < n < 9:
+                    color = self.controller.color4
+                elif 8 < n < 13:
+                    color = self.controller.color5
+
+                if color:
+                    if m % 2:
+                        color = color.darker(107)
+                    brush = QtGui.QBrush(color)
+                    brush.setStyle(QtCore.Qt.SolidPattern)
+                    newItem.setBackground(brush)
+
+                self.controller.ui.tableConfig.setItem(m, n, newItem)
+        self.controller.ui.tableConfig.resizeColumnsToContents()
+
+    @QtCore.pyqtSlot()
+    def setClock(self, timeStr):
+        self.controller.ui.lblTime.setText(timeStr)
+
+    @QtCore.pyqtSlot()
+    def setCurrent(self, string):
+        self.controller.ui.lblCurrent.setText(string)
+
+    @QtCore.pyqtSlot()
+    def setHap(self, string):
+        self.controller.ui.lblHap.setText(string)
+
+    @QtCore.pyqtSlot()
+    def update_progressbar(self, val):
+        self.controller.ui.progressBar.setValue(val)
 
 
 def make_controller(ui):

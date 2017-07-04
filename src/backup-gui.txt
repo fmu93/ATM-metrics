@@ -8,8 +8,8 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import controller
-import sys
+	import controller
+	import sys
 
 class Ui_Form(object):
     def setupUi(self, Form):
