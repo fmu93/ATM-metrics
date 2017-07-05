@@ -414,11 +414,20 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         self.layoutVertical.setContentsMargins(0, 0, 0, 0)
         self.layoutVertical.addWidget(self.canvas)
 
+        self.reset_fig()
         self.binsize = 60  # min
+        self.max_y = self.binsize*1.1
+        self.text_side = 0.02
 
-    def update_figure(self, op_list):  # TODO plot histogram
-        # epoch_now = self.controller.core.dataExtractor.extract_data.epoch_now
-        last_time = op_list[0].op_timestamp
+    def reset_fig(self):
+        self.axes.clear()
+        self.axes.grid(True)
+        self.axes.set_title('Dep/Arr')
+
+    def update_figure(self, op_list, config_list):  # TODO labels
+        self.reset_fig()
+        # operation histogram
+        last_time = op_list[0].op_timestamp - op_list[0].op_timestamp % (self.binsize * 60)
         dep = []
         arr = []
         for m, op in enumerate(op_list):
@@ -428,14 +437,30 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
             elif op.LorT == 'L':
                 arr.append(delay)
         bins = np.arange(0, arr[-1]/self.binsize + 1)*self.binsize
+        n, bins2, patches = self.axes.hist([arr, dep], bins=bins, stacked=True, rwidth=0.9)
+        # self.max_y = max([x+y for x, y in zip(n[0], n[1])])
+        for m1, count1 in enumerate(n[0]):
+            self.axes.text(bins[m1]-bins[-1]*self.text_side + self.binsize/2.0, count1+1, '{:.0f}'.format(count1))
+        for m2, count2 in enumerate(n[1]):
+            self.axes.text(bins[m2]+bins[-1]*self.text_side + self.binsize/2.0, count2+1, '{:.0f}'.format(count2-n[0][m2]))
 
-        self.axes.clear()
+        # config changes
 
-        self.axes.set_title('Dep/Arr')
-        self.axes.hist([arr, dep], bins=bins, stacked=True, rwidth=0.9)
+        for m, config in enumerate(config_list):
+            self.axes.plot([(last_time - config.from_epoch)/60.0]*2, [0, self.max_y], 'b--')
+            self.axes.text((last_time - config.from_epoch)/60.0-bins[-1]*self.text_side, self.max_y*0.9, config.config)
+
+
         # arr_plt = self.axes.hist(arr, self.binsize, stacked=True, color='b')
         # dep_plt = self.axes.hist(dep, self.binsize, stacked=True, color='r')
         # self.axes.legend((arr_plt[0], dep_plt[0]), ('dep', 'arr'))
+        # self.max_y = new_max_y if self.max_y < new_max_y else self.max_y
+        # self.axes.set_ylim([0, self.max_y])
+
+        # line of mean
+        # self.axes.plot(bins, [self.max_y]*len(bins), 'k--')
+
+        # show plot
         self.axes.set_xticks(bins)
         self.canvas.draw()
 

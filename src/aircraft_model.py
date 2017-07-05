@@ -17,6 +17,7 @@ class Aircraft:
         self.vel_buffer_dict = {}  # [epoch]
         self.type = icao_database.get_type(self.icao)
         self.regid = icao_database.get_regid(self.icao)
+        self.not_an_aircraft = True
 
     def set_call(self, new_call, epoch):
         if not self.flights_dict.keys():
@@ -75,6 +76,9 @@ class Aircraft:
         return current_diff
 
     def set_new_pos(self, epoch, lat, lon, alt):
+        # some icao sending positions may be a ground vehicle
+        if self.not_an_aircraft and alt > airport_altitude + 100:
+            self.not_an_aircraft = False
         for key in sorted(self.pos_buffer_dict):
             if epoch - key > 300:
                 self.pos_buffer_dict.pop(key, None)  # remove key for old position
@@ -119,6 +123,7 @@ class Flight:
         self.last_seen = epoch
         self.operations = []  # [Operation()]
         self.waypoints = []  # ['waypoint_name', ...]
+        self.has_missed_app = False
 
     def __lt__(self, other):
         return self.last_seen < other.last_seen  # to be able to sort
@@ -145,7 +150,10 @@ class Flight:
         return
 
     def get_operations(self, epoch_now):
+
         operation_list = []  # Operation
+        if self.aircraft.not_an_aircraft:
+            return operation_list
         if len(self.operations) == 1:
             operation_list.append(self.operations[0].validate_operation(epoch_now))  # one operation
         elif len(self.operations) > 1:  # several operations
@@ -155,15 +163,16 @@ class Flight:
                 if i > 0:
                     if prev_LorT == 'L' and validated_op.LorT == 'L':
                         # two consecutive attempts to land
-                        operation_list[i-1].op_comment = '(first/2 approach) '
+                        operation_list[i-1].op_comment = '(first/2 approach)'
+                        self.has_missed_app = True
                         if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
                             pass
                         else:
                             validated_op.op_comment = '(second approach aft: ' +\
                                     '{:1.2f}'.format((validated_op.op_timestamp -
-                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min) '
+                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min)'
                     else:
-                        validated_op.op_comment = '(second operation) '  # with new callsign keying model we don't need this
+                        validated_op.op_comment = '(second operation)'  # with new callsign keying model we don't need this
 
                 operation_list.append(validated_op)
                 prev_LorT = validated_op.LorT
@@ -204,7 +213,7 @@ class Operation:
         self.miss_inclin_ths = 1
         self.possible_miss_time = None
         self.miss_guess_count = 0
-        self.miss_guess_min = 3
+        self.miss_guess_min = 5
 
     def __lt__(self, other):
         return self.op_timestamp < other.op_timestamp  # to be able to sort

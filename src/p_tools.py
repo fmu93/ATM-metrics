@@ -10,6 +10,22 @@ def time_string(epoch):
     return string
 
 
+def duration_string(seconds):
+    if seconds is None:
+        return "unknown duration"
+    if seconds > 86400:
+        days = seconds / 86400
+        seconds = seconds - days*86400
+        string = '%sd %s:%s:%s' % (days, '{:02.0f}'.format(seconds / 3600),
+                                   '{:02.0f}'.format((seconds % 3600) / 60),
+                                   '{:02.0f}'.format((seconds % 3600) % 60))
+    else:
+        string = '%s:%s:%s' % ('{:02.0f}'.format(seconds / 3600),
+                               '{:02.0f}'.format((seconds % 3600) / 60),
+                               '{:02.0f}'.format((seconds % 3600) % 60))
+    return string
+
+
 def get_file_name(infile):
     return os.path.splitext(os.path.basename(infile.name))[0]
 

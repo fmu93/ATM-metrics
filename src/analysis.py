@@ -1,4 +1,4 @@
-from p_tools import time_string
+from p_tools import time_string, duration_string
 from operator import itemgetter
 import time
 
@@ -127,7 +127,9 @@ class ConfigLog:
                     try:
                         total_count += 1
                         counter[self.ops.index(op)] += 1
-                        if operation.missed_detected:
+                        # for the misses, we could do it per known missed since we detected the second approach
+                        # or per detected missed itself, which may not be a missed in the end
+                        if operation.flight.has_missed_app:
                             miss_count += 1
                     except Exception:
                         print 'error in op_timestamp, type: ' + type(op_timestamp)  # doesnt make sense this here...
@@ -145,7 +147,7 @@ class Config:
         self.config = config
         self.from_epoch = from_epoch
         self.until_epoch = until_epoch
-        self.duration = (self.until_epoch - self.from_epoch) / 3600.0
+        self.duration = self.until_epoch - self.from_epoch
         self.runway_list = runway_list  # [] 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R
         self.missed = missed
         self.slack = slack
@@ -154,7 +156,7 @@ class Config:
         return self.from_epoch < other.from_epoch
 
     def listed(self):
-        return [time_string(self.from_epoch), time_string(self.until_epoch), '{:.2f}'.format(self.duration),
+        return [time_string(self.from_epoch), time_string(self.until_epoch), duration_string(self.duration),
                 self.config, '{:d}'.format(sum(self.runway_list)), '{:d}'.format(self.runway_list[0]),
                 '{:d}'.format(self.runway_list[1]), '{:d}'.format(self.runway_list[2]),
                 '{:d}'.format(self.runway_list[3]), '{:d}'.format(self.runway_list[4]),

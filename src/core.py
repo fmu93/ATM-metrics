@@ -123,7 +123,7 @@ class OperationRefreshThread(threading.Thread):
         for op in (self.operation_dict.values()):
             op_list.append(op)
 
-        if op_list:
+        if len(op_list) > 2:
             op_list.sort()
             config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
 
@@ -133,7 +133,7 @@ class OperationRefreshThread(threading.Thread):
             # small efficiency trick
             self.core.controller.threadSample.update_tableFlights(
                 op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list)
-            self.core.controller.histo.update_figure(op_list)
+            self.core.controller.histo.update_figure(op_list, config_list)
 
 
 class Core:
