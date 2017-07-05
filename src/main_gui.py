@@ -2,15 +2,16 @@
 
 # Form implementation generated from reading ui file 'main2.ui'
 #
-# Created: Tue Jul 04 12:04:48 2017
+# Created: Wed Jul 05 16:48:09 2017
 #      by: PyQt5 UI code generator 5.3.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
 from matplotlib.figure import Figure
-import random
 import numpy as np
 
 class Ui_Form(object):
@@ -31,20 +32,25 @@ class Ui_Form(object):
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.btnOpen = QtWidgets.QPushButton(Form)
+        self.btnOpen.setMinimumSize(QtCore.QSize(90, 0))
         self.btnOpen.setObjectName("btnOpen")
         self.horizontalLayout.addWidget(self.btnOpen)
         self.btnRun = QtWidgets.QPushButton(Form)
+        self.btnRun.setMinimumSize(QtCore.QSize(90, 0))
         self.btnRun.setObjectName("btnRun")
         self.horizontalLayout.addWidget(self.btnRun)
         self.btnWrite = QtWidgets.QPushButton(Form)
+        self.btnWrite.setMinimumSize(QtCore.QSize(90, 0))
         self.btnWrite.setObjectName("btnWrite")
         self.horizontalLayout.addWidget(self.btnWrite)
+        self.btnPause = QtWidgets.QPushButton(Form)
+        self.btnPause.setMinimumSize(QtCore.QSize(90, 0))
+        self.btnPause.setObjectName("btnPause")
+        self.horizontalLayout.addWidget(self.btnPause)
         self.btnStop = QtWidgets.QPushButton(Form)
+        self.btnStop.setMinimumSize(QtCore.QSize(90, 0))
         self.btnStop.setObjectName("btnStop")
         self.horizontalLayout.addWidget(self.btnStop)
-        self.btnQuit = QtWidgets.QPushButton(Form)
-        self.btnQuit.setObjectName("btnQuit")
-        self.horizontalLayout.addWidget(self.btnQuit)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
         self.lblTime = QtWidgets.QLabel(Form)
@@ -86,6 +92,9 @@ class Ui_Form(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
         self.progressBar.setSizePolicy(sizePolicy)
+        self.progressBar.setMinimumSize(QtCore.QSize(80, 0))
+        self.progressBar.setMinimum(0)
+        self.progressBar.setMaximum(100)
         self.progressBar.setProperty("value", 0)
         self.progressBar.setTextVisible(True)
         self.progressBar.setOrientation(QtCore.Qt.Horizontal)
@@ -94,7 +103,7 @@ class Ui_Form(object):
         self.progressBar.setObjectName("progressBar")
         self.horizontalLayout_2.addWidget(self.progressBar)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
-        spacerItem2 = QtWidgets.QSpacerItem(20, 30, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self.verticalLayout.addItem(spacerItem2)
         self.line = QtWidgets.QFrame(Form)
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
@@ -114,11 +123,11 @@ class Ui_Form(object):
         self.gridLayout_3 = QtWidgets.QGridLayout(self.Configuration)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout()
-        self.verticalLayout_5.setSizeConstraint(QtWidgets.QLayout.SetMinAndMaxSize)
+        self.verticalLayout_5.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.verticalLayout_5.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_5.setObjectName("verticalLayout_5")
         self.lbl_config = QtWidgets.QLabel(self.Configuration)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lbl_config.sizePolicy().hasHeightForWidth())
@@ -126,12 +135,13 @@ class Ui_Form(object):
         self.lbl_config.setObjectName("lbl_config")
         self.verticalLayout_5.addWidget(self.lbl_config)
         self.tableConfig = QtWidgets.QTableWidget(self.Configuration)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tableConfig.sizePolicy().hasHeightForWidth())
         self.tableConfig.setSizePolicy(sizePolicy)
-        self.tableConfig.setMinimumSize(QtCore.QSize(0, 80))
+        self.tableConfig.setMinimumSize(QtCore.QSize(0, 50))
+        self.tableConfig.setMaximumSize(QtCore.QSize(16777215, 250))
         font = QtGui.QFont()
         font.setPointSize(10)
         self.tableConfig.setFont(font)
@@ -151,27 +161,53 @@ class Ui_Form(object):
         self.tableConfig.horizontalHeader().setStretchLastSection(False)
         self.verticalLayout_5.addWidget(self.tableConfig)
         self.lbl_histo = QtWidgets.QLabel(self.Configuration)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lbl_histo.sizePolicy().hasHeightForWidth())
         self.lbl_histo.setSizePolicy(sizePolicy)
         self.lbl_histo.setObjectName("lbl_histo")
         self.verticalLayout_5.addWidget(self.lbl_histo)
+        self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_6.setObjectName("horizontalLayout_6")
 
         self.matplotlibWidget = MatplotlibWidget(self.Configuration)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.matplotlibWidget.sizePolicy().hasHeightForWidth())
         self.matplotlibWidget.setSizePolicy(sizePolicy)
-        self.matplotlibWidget.setMaximumHeight(250)
         self.matplotlibWidget.setObjectName("matplotlibWidget")
-        # self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.matplotlibWidget)
-        # self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        # self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.verticalLayout_5.addWidget(self.matplotlibWidget)
+        # self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.matplotlibWidget)
+        # self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
+        # self.horizontalLayout_5.setObjectName("horizontalLayout_5")
 
+        self.horizontalLayout_6.addWidget(self.matplotlibWidget)
+        self.line_7 = QtWidgets.QFrame(self.Configuration)
+        self.line_7.setFrameShape(QtWidgets.QFrame.VLine)
+        self.line_7.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line_7.setObjectName("line_7")
+        self.horizontalLayout_6.addWidget(self.line_7)
+        self.gridLayout_6 = QtWidgets.QGridLayout()
+        self.gridLayout_6.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.gridLayout_6.setSpacing(10)
+        self.gridLayout_6.setObjectName("gridLayout_6")
+        self.label_5 = QtWidgets.QLabel(self.Configuration)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_5.sizePolicy().hasHeightForWidth())
+        self.label_5.setSizePolicy(sizePolicy)
+        self.label_5.setMinimumSize(QtCore.QSize(100, 0))
+        self.label_5.setObjectName("label_5")
+        self.gridLayout_6.addWidget(self.label_5, 0, 1, 1, 1)
+        self.comboPlotSettings = QtWidgets.QComboBox(self.Configuration)
+        self.comboPlotSettings.setObjectName("comboPlotSettings")
+        self.gridLayout_6.addWidget(self.comboPlotSettings, 1, 1, 1, 1)
+        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout_6.addItem(spacerItem3, 2, 1, 1, 1)
+        self.horizontalLayout_6.addLayout(self.gridLayout_6)
+        self.verticalLayout_5.addLayout(self.horizontalLayout_6)
         self.gridLayout_3.addLayout(self.verticalLayout_5, 0, 0, 1, 1)
         self.tabWidget.addTab(self.Configuration, "")
         self.Operations = QtWidgets.QWidget()
@@ -310,8 +346,8 @@ class Ui_Form(object):
         self.btnSetRate.setObjectName("btnSetRate")
         self.horizontalLayout_3.addWidget(self.btnSetRate)
         self.gridLayout.addLayout(self.horizontalLayout_3, 0, 2, 1, 1)
-        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem3, 7, 2, 1, 1)
+        spacerItem4 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem4, 7, 2, 1, 1)
         self.line_2 = QtWidgets.QFrame(self.Settings)
         self.line_2.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -330,15 +366,36 @@ class Ui_Form(object):
         self.gridLayout.addWidget(self.label, 3, 4, 1, 1)
         self.gridLayout_5 = QtWidgets.QGridLayout()
         self.gridLayout_5.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+        self.gridLayout_5.setSpacing(10)
         self.gridLayout_5.setObjectName("gridLayout_5")
         self.label_4 = QtWidgets.QLabel(self.Settings)
         self.label_4.setObjectName("label_4")
-        self.gridLayout_5.addWidget(self.label_4, 1, 0, 1, 1)
-        spacerItem4 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout_5.addItem(spacerItem4, 2, 1, 1, 1)
+        self.gridLayout_5.addWidget(self.label_4, 2, 0, 1, 1)
         self.label_3 = QtWidgets.QLabel(self.Settings)
         self.label_3.setObjectName("label_3")
         self.gridLayout_5.addWidget(self.label_3, 0, 0, 1, 1)
+        spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.gridLayout_5.addItem(spacerItem5, 3, 1, 1, 1)
+        self.plainTextEdit_2 = QtWidgets.QPlainTextEdit(self.Settings)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.plainTextEdit_2.sizePolicy().hasHeightForWidth())
+        self.plainTextEdit_2.setSizePolicy(sizePolicy)
+        self.plainTextEdit_2.setMinimumSize(QtCore.QSize(0, 30))
+        self.plainTextEdit_2.setMaximumSize(QtCore.QSize(16777215, 30))
+        self.plainTextEdit_2.setObjectName("plainTextEdit_2")
+        self.gridLayout_5.addWidget(self.plainTextEdit_2, 2, 1, 1, 1)
+        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.Settings)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.plainTextEdit.sizePolicy().hasHeightForWidth())
+        self.plainTextEdit.setSizePolicy(sizePolicy)
+        self.plainTextEdit.setMinimumSize(QtCore.QSize(0, 30))
+        self.plainTextEdit.setMaximumSize(QtCore.QSize(16777215, 30))
+        self.plainTextEdit.setObjectName("plainTextEdit")
+        self.gridLayout_5.addWidget(self.plainTextEdit, 0, 1, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_5, 7, 1, 1, 1)
         self.line_5 = QtWidgets.QFrame(self.Settings)
         self.line_5.setFrameShape(QtWidgets.QFrame.HLine)
@@ -372,8 +429,8 @@ class Ui_Form(object):
         self.btnOpen.setText(_translate("Form", "Select files"))
         self.btnRun.setText(_translate("Form", "Run"))
         self.btnWrite.setText(_translate("Form", "Write logs"))
+        self.btnPause.setText(_translate("Form", "Pause"))
         self.btnStop.setText(_translate("Form", "Stop"))
-        self.btnQuit.setText(_translate("Form", "Quit"))
         self.lblTime.setText(_translate("Form", "..."))
         self.lblProcess.setText(_translate("Form", "Process..."))
         self.lblCurrent.setText(_translate("Form", "..."))
@@ -381,6 +438,7 @@ class Ui_Form(object):
         self.lbl_config.setText(_translate("Form", "Configuration table"))
         self.tableConfig.setSortingEnabled(True)
         self.lbl_histo.setText(_translate("Form", "Throughput histogram"))
+        self.label_5.setText(_translate("Form", "Plot settings:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Configuration), _translate("Form", "Configuration"))
         self.lbl_flights.setText(_translate("Form", "Operations table"))
         self.tableFlights.setSortingEnabled(True)
@@ -392,7 +450,7 @@ class Ui_Form(object):
         self.btnSetRate.setText(_translate("Form", "Set"))
         self.checkBoxDelimit.setText(_translate("Form", "delimited time range"))
         self.label.setText(_translate("Form", "..."))
-        self.label_4.setText(_translate("Form", "TextLabel"))
+        self.label_4.setText(_translate("Form", "TextLabel:"))
         self.label_3.setText(_translate("Form", "Out file name:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Settings), _translate("Form", "Settings"))
 
@@ -404,15 +462,26 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
     def __init__(self, parent=None):
         super(MatplotlibWidget, self).__init__(parent)
 
-        self.figure = Figure()
+        self.figure = Figure(edgecolor='k')
+        self.figure.subplots_adjust(left=0.05, right=0.95)
+        self.figure.set_size_inches(20, 3.5)
         self.canvas = FigureCanvasQTAgg(self.figure)
         # self.canvas.resize(100, 100)
         self.axes = self.figure.add_subplot(111)
         self.axes.set_title('Dep/Arr')
+        self.scroll = QtWidgets.QScrollArea(self)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.scroll.sizePolicy().hasHeightForWidth())
+        self.scroll.setSizePolicy(sizePolicy)
+        self.scroll.setWidget(self.canvas)
         self.layoutVertical = QtWidgets.QVBoxLayout(self)
         self.layoutVertical.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.layoutVertical.setContentsMargins(0, 0, 0, 0)
-        self.layoutVertical.addWidget(self.canvas)
+        self.nav = NavigationToolbar(self.canvas, self)
+        self.layoutVertical.addWidget(self.nav)
+        self.layoutVertical.addWidget(self.scroll)
 
         self.reset_fig()
         self.binsize = 60  # min
@@ -423,6 +492,9 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         self.axes.clear()
         self.axes.grid(True)
         self.axes.set_title('Dep/Arr')
+        self.figure.set_size_inches(20, 3.5)
+        # sframe = Slider(self.axes, 'Frame', 0, 99, valinit=0, valfmt='%d')
+        # sframe.on_changed(update)
 
     def update_figure(self, op_list, config_list):  # TODO labels
         self.reset_fig()
@@ -442,26 +514,20 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         for m1, count1 in enumerate(n[0]):
             self.axes.text(bins[m1]-bins[-1]*self.text_side + self.binsize/2.0, count1+1, '{:.0f}'.format(count1))
         for m2, count2 in enumerate(n[1]):
-            self.axes.text(bins[m2]+bins[-1]*self.text_side + self.binsize/2.0, count2+1, '{:.0f}'.format(count2-n[0][m2]))
+            self.axes.text(bins[m2] + self.binsize/2.0, count2+1, '{:.0f}'.format(count2-n[0][m2]))
 
-        # config changes
+        # config changes vertical lines
 
         for m, config in enumerate(config_list):
             self.axes.plot([(last_time - config.from_epoch)/60.0]*2, [0, self.max_y], 'b--')
-            self.axes.text((last_time - config.from_epoch)/60.0-bins[-1]*self.text_side, self.max_y*0.9, config.config)
+            self.axes.text((last_time - config.from_epoch)/60.0-bins[-1]*self.text_side, self.max_y*0.95, config.config)
 
-
-        # arr_plt = self.axes.hist(arr, self.binsize, stacked=True, color='b')
-        # dep_plt = self.axes.hist(dep, self.binsize, stacked=True, color='r')
-        # self.axes.legend((arr_plt[0], dep_plt[0]), ('dep', 'arr'))
-        # self.max_y = new_max_y if self.max_y < new_max_y else self.max_y
-        # self.axes.set_ylim([0, self.max_y])
-
-        # line of mean
+        # line of mean horizontal line (per day)
         # self.axes.plot(bins, [self.max_y]*len(bins), 'k--')
 
         # show plot
         self.axes.set_xticks(bins)
+        self.axes.set_xlim([0, bins[-1]])
         self.canvas.draw()
 
 
@@ -488,6 +554,4 @@ def run():
     form.set_ui(ui)
     form.show()
     sys.exit(app.exec_())
-
-
 

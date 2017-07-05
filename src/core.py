@@ -155,7 +155,7 @@ class Core:
             self.controller.threadSample.setHap('Running')
             self.controller.threadSample.update_progressbar(0)
 
-    def stop(self):  # TODO make pause/resume button
+    def stop(self):
         try:
             self.dataExtractor.shutdown()
             self.operationRefresh.shutdown()
@@ -164,6 +164,12 @@ class Core:
         except Exception:
             print 'Can\'t kill threads'
             self.controller.threadSample.setHap('Can\'t kill threads')
+
+    def pause(self):  # TODO make pause/resume button
+        try:
+            pass
+        except:
+            pass
 
     def done(self):
         self.operationRefresh.shutdown()

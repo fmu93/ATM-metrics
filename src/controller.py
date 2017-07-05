@@ -31,7 +31,7 @@ class Controller:
         self.ui.btnRun.clicked.connect(self.core.run)
         self.ui.btnWrite.clicked.connect(self.core.write_analysis)
         self.ui.btnStop.clicked.connect(self.core.stop)
-        self.ui.btnQuit.clicked.connect(self.close_application)
+        self.ui.btnPause.clicked.connect(self.core.pause)
 
         # pallete
         self.color1 = QtGui.QColor('#F7F8F9')  # rest
