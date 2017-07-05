@@ -463,19 +463,20 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         super(MatplotlibWidget, self).__init__(parent)
 
         self.figure = Figure(edgecolor='k')
-        self.figure.subplots_adjust(left=0.05, right=0.95)
-        self.figure.set_size_inches(20, 3.5)
+        self.figure.subplots_adjust(left=0.05, right=0.95, top=0.85, bottom=0.15)
+        self.figure.set_size_inches(7, 3)
         self.canvas = FigureCanvasQTAgg(self.figure)
-        # self.canvas.resize(100, 100)
         self.axes = self.figure.add_subplot(111)
         self.axes.set_title('Dep/Arr')
+
         self.scroll = QtWidgets.QScrollArea(self)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.scroll.sizePolicy().hasHeightForWidth())
         self.scroll.setSizePolicy(sizePolicy)
         self.scroll.setWidget(self.canvas)
+
         self.layoutVertical = QtWidgets.QVBoxLayout(self)
         self.layoutVertical.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.layoutVertical.setContentsMargins(0, 0, 0, 0)
@@ -483,20 +484,34 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         self.layoutVertical.addWidget(self.nav)
         self.layoutVertical.addWidget(self.scroll)
 
+        # self.scroll.resize(self.layoutVertical.geometry().width(), self.layoutVertical.geometry().height())
+
+        self.bins = [1]
+        self.binsize = 15  # min
+        self.max_y = self.binsize*1.2
+        self.scroll_resize = False
+        self.show_labels = False
+        self.stacked = True
         self.reset_fig()
-        self.binsize = 60  # min
-        self.max_y = self.binsize*1.1
-        self.text_side = 0.02
 
     def reset_fig(self):
         self.axes.clear()
         self.axes.grid(True)
-        self.axes.set_title('Dep/Arr')
-        self.figure.set_size_inches(20, 3.5)
-        # sframe = Slider(self.axes, 'Frame', 0, 99, valinit=0, valfmt='%d')
-        # sframe.on_changed(update)
+        self.axes.set_title('Dep/Arr', loc='center')
+        self.resize_fig()
 
-    def update_figure(self, op_list, config_list):  # TODO labels
+    def resize_fig(self):
+        dpi1 = self.figure.get_dpi()
+        if self.scroll_resize and len(self.bins) >= 5 and len(self.bins)*50 >= self.scroll.width():
+            self.figure.set_size_inches(len(self.bins)*50 / float(dpi1),
+                                        (self.scroll.height()-20) / float(dpi1))
+            self.canvas.resize(self.figure.get_figwidth() * float(dpi1), self.figure.get_figheight() * float(dpi1))
+        else:
+            self.figure.set_size_inches((self.scroll.width()) / float(dpi1),
+                                        (self.scroll.height()-20) / float(dpi1))
+            self.canvas.resize(self.figure.get_figwidth()*float(dpi1), self.figure.get_figheight()*float(dpi1))
+
+    def update_figure(self, op_list, config_list):  # TODO legend
         self.reset_fig()
         # operation histogram
         last_time = op_list[0].op_timestamp - op_list[0].op_timestamp % (self.binsize * 60)
@@ -508,32 +523,48 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
                 dep.append(delay)
             elif op.LorT == 'L':
                 arr.append(delay)
-        bins = np.arange(0, arr[-1]/self.binsize + 1)*self.binsize
-        n, bins2, patches = self.axes.hist([arr, dep], bins=bins, stacked=True, rwidth=0.9)
+        self.bins = np.arange(0, arr[-1]/self.binsize + 1)*self.binsize
+        if self.stacked:
+            [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, stacked=True, rwidth=0.9,
+                                                  color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
+        else:
+            [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, histtype = 'bar', rwidth = 0.9,
+                                       color = ['#9CB380', '#5CC8FF'], label = ['arr', 'dep'])
+
+        # n0, bins2, patches = self.axes.hist(arr, bins=self.bins, stacked=True, color='#9CB380', rwidth=0.9, label='arr')
+        # n1, bins2, patches = self.axes.hist(dep, bins=self.bins, stacked=True, color='#5CC8FF', rwidth=0.9, label='dep')
+        self.axes.legend(loc=2)
         # self.max_y = max([x+y for x, y in zip(n[0], n[1])])
-        for m1, count1 in enumerate(n[0]):
-            self.axes.text(bins[m1]-bins[-1]*self.text_side + self.binsize/2.0, count1+1, '{:.0f}'.format(count1))
-        for m2, count2 in enumerate(n[1]):
-            self.axes.text(bins[m2] + self.binsize/2.0, count2+1, '{:.0f}'.format(count2-n[0][m2]))
+        if self.show_labels:
+            for m1, count1 in enumerate(n0):
+                self.axes.text(self.bins[m1] + self.binsize*0.25, count1+self.max_y*0.02, '{:.0f}'.format(count1))
+            for m2, count2 in enumerate(n1):
+                self.axes.text(self.bins[m2] + self.binsize*0.75, count2+self.max_y*0.02, '{:.0f}'.format(count2))
 
         # config changes vertical lines
-
         for m, config in enumerate(config_list):
-            self.axes.plot([(last_time - config.from_epoch)/60.0]*2, [0, self.max_y], 'b--')
-            self.axes.text((last_time - config.from_epoch)/60.0-bins[-1]*self.text_side, self.max_y*0.95, config.config)
+            self.axes.plot([(last_time - config.from_epoch)/60.0]*2, [0, 0.85*self.max_y], 'b--', linewidth=1)
+            self.axes.text((last_time - config.from_epoch)/60.0-self.binsize*0.2, self.max_y*0.9, config.config)
 
         # line of mean horizontal line (per day)
-        # self.axes.plot(bins, [self.max_y]*len(bins), 'k--')
+        avg = np.average(n1)
+        # avg = np.average([x+y for x, y in zip(n0, n1)])
+        self.axes.plot(self.bins, [avg] * len(self.bins), 'k--', linewidth=0.6)
+        self.axes.text(0, self.max_y*1.05,
+                       "Average throughput per bin: " + '{:.1f}'.format(avg) + "\nBin size is: " +
+                       '{:d}'.format(self.binsize) + " min")
 
         # show plot
-        self.axes.set_xticks(bins)
-        self.axes.set_xlim([0, bins[-1]])
+        self.axes.set_xticks(self.bins)
+        self.axes.set_xlim([0, self.bins[-1]])
+        self.axes.set_ylim([0, self.max_y])
         self.canvas.draw()
 
 
 class Form(QtWidgets.QWidget):
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
+        self.resizeEvent = self.onRezise
 
     def closeEvent(self, QCloseEvent):
         QCloseEvent.ignore()
@@ -541,6 +572,9 @@ class Form(QtWidgets.QWidget):
 
     def set_ui(self, ui):
         self.ui = ui
+
+    def onRezise(self, event):
+        self.ui.matplotlibWidget.resize_fig()
 
 
 def run():

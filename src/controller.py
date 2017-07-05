@@ -6,7 +6,7 @@ import random
 
 flight_headers = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','pos_count','V(fpm)','GS(kts)','(deg)',
               'track','runway','change_comm','miss_comm','op_comm', 'waypoints']
-config_headers = ['From time', 'Until time', 'Dur (h)', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
+config_headers = ['From time', 'Until time', 'Duration', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
                   'missed', 'Slack (min)']
 
 
@@ -52,6 +52,7 @@ class Controller:
         self.close_application()
 
     def close_application(self):
+        # sys.exit()  # TODO delete this line
         choice = QtWidgets.QMessageBox.question(self.ui.form, 'Exit box', "Exit program?",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
