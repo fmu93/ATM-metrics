@@ -29,11 +29,12 @@ class DataExtractorThread(threading.Thread):
         self.num_lines = 1.0
         self.first_file = None
         self.file_count = 1
+        self.forced_exit = False
 
     def shutdown(self):
         """Stop this thread"""
         self._finished.set()
-        self.extract_data.stop()
+        self.forced_exit = self.extract_data.stop()
 
     def run(self):
         if self._finished.isSet(): return
@@ -62,7 +63,8 @@ class DataExtractorThread(threading.Thread):
             icao_filter = None
             self.extract_data.run(self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
-        self.core.done()
+        if not self.forced_exit:
+            self.core.done()
 
     def dispTime(self, timeStr):
         self.core.controller.threadSample.setClock(timeStr)
@@ -104,10 +106,10 @@ class OperationRefreshThread(threading.Thread):
                 for flight in aircraft.flights_dict.values():
                     if len(flight.operations) > 0 and \
                                     flight.operations[-1].last_op_guess >= flight.operations[-1].last_validation:
-
+                        # only compute/validate operation of aircraft which had a new guess from last validation
                         for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
                             if operation.op_timestamp is not None:  # TODO why are some op_timestamp None?
-                                # TODO make sure operations are properlly... if one validation makes one op but then it/
+                                # TODO make sure operations are properly computed... if one validation makes one op but then it/
                                 # was another one, both remain instead of overwritting
                                 # final_operations_list.append(operation)
                                 self.operation_dict[operation] = operation
@@ -121,14 +123,17 @@ class OperationRefreshThread(threading.Thread):
         for op in (self.operation_dict.values()):
             op_list.append(op)
 
-        op_list.sort()
-        config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient 'only new'
+        if op_list:
+            op_list.sort()
+            config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
 
-        config_list.sort(reverse=True)
-        self.core.controller.threadSample.update_tableConfig(config_list)
-        op_list.sort(reverse=True)
-        self.core.controller.threadSample.update_tableFlights(op_list)
-        self.core.controller.histo.update_figure()
+            config_list.sort(reverse=True)
+            self.core.controller.threadSample.update_tableConfig(config_list)
+            op_list.sort(reverse=True)
+            # small efficiency trick
+            self.core.controller.threadSample.update_tableFlights(
+                op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list)
+            self.core.controller.histo.update_figure(op_list)
 
 
 class Core:
@@ -137,6 +142,7 @@ class Core:
         self.operationRefresh = None
         self.controller = None
         self.infiles = None
+        self.operations_table_rows = 200
 
     def run(self):
         if self.infiles:
@@ -149,7 +155,7 @@ class Core:
             self.controller.threadSample.setHap('Running')
             self.controller.threadSample.update_progressbar(0)
 
-    def stop(self):
+    def stop(self):  # TODO make pause/resume button
         try:
             self.dataExtractor.shutdown()
             self.operationRefresh.shutdown()
@@ -162,7 +168,7 @@ class Core:
     def done(self):
         self.operationRefresh.shutdown()
         self.controller.threadSample.setHap('Done')
-        # self.controller.threadSample..update_progressbar(100)
+        # self.controller.threadSample.update_progressbar(100)
 
     def set_controller(self, controller):
         self.controller = controller

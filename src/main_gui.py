@@ -160,7 +160,7 @@ class Ui_Form(object):
         self.verticalLayout_5.addWidget(self.lbl_histo)
 
         self.matplotlibWidget = MatplotlibWidget(self.Configuration)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.matplotlibWidget.sizePolicy().hasHeightForWidth())
@@ -399,46 +399,44 @@ class Ui_Form(object):
     def set_controller(self, controller2):
         self.controller = controller2
 
-class MatplotlibWidget(QtWidgets.QWidget):
+
+class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controller
     def __init__(self, parent=None):
         super(MatplotlibWidget, self).__init__(parent)
 
         self.figure = Figure()
         self.canvas = FigureCanvasQTAgg(self.figure)
         # self.canvas.resize(100, 100)
-
         self.axes = self.figure.add_subplot(111)
-
+        self.axes.set_title('Dep/Arr')
         self.layoutVertical = QtWidgets.QVBoxLayout(self)
         self.layoutVertical.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.layoutVertical.setContentsMargins(0, 0, 0, 0)
         self.layoutVertical.addWidget(self.canvas)
 
-    def update_figure(self):  # TODO plot histogram
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = [random.randint(0, 10) for i in range(5)]
+        self.binsize = 60  # min
 
-        self.axes.plot([0, 1, 2, 3, 4], l, 'r')
+    def update_figure(self, op_list):  # TODO plot histogram
+        # epoch_now = self.controller.core.dataExtractor.extract_data.epoch_now
+        last_time = op_list[0].op_timestamp
+        dep = []
+        arr = []
+        for m, op in enumerate(op_list):
+            delay = (last_time - op.op_timestamp)/60.0
+            if op.LorT == 'T':
+                dep.append(delay)
+            elif op.LorT == 'L':
+                arr.append(delay)
+        bins = np.arange(0, arr[-1]/self.binsize + 1)*self.binsize
 
-        N = 5
-        menMeans = l
-        womenMeans = (25, 32, 34, 20, 25)
-        menStd = (2, 3, 4, 1, 2)
-        womenStd = (3, 5, 2, 3, 3)
-        ind = np.arange(N)  # the x locations for the groups
-        width = 0.35  # the width of the bars: can also be len(x) sequence
+        self.axes.clear()
 
-        p1 = self.axes.bar(ind, menMeans, width, color='#d62728', yerr=menStd)
-        p2 = self.axes.bar(ind, womenMeans, width,
-                     bottom=menMeans, yerr=womenStd)
-
-        # plt.ylabel('Scores')
-        # plt.title('Scores by group and gender')
-        # plt.xticks(ind, ('G1', 'G2', 'G3', 'G4', 'G5'))
-        # plt.yticks(np.arange(0, 81, 10))
-        # plt.legend((p1[0], p2[0]), ('Men', 'Women'))
-
-
+        self.axes.set_title('Dep/Arr')
+        self.axes.hist([arr, dep], bins=bins, stacked=True, rwidth=0.9)
+        # arr_plt = self.axes.hist(arr, self.binsize, stacked=True, color='b')
+        # dep_plt = self.axes.hist(dep, self.binsize, stacked=True, color='r')
+        # self.axes.legend((arr_plt[0], dep_plt[0]), ('dep', 'arr'))
+        self.axes.set_xticks(bins)
         self.canvas.draw()
 
 

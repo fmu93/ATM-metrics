@@ -216,3 +216,4 @@ class Metrics:
 
     def stop(self):
         self.dead = True
+        return True

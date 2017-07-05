@@ -19,7 +19,7 @@ class Controller:
 
         # table
         self.ui.tableFlights.setColumnCount(15)
-        self.ui.tableFlights.setRowCount(200)
+        self.ui.tableFlights.setRowCount(self.core.operations_table_rows)
         self.ui.tableFlights.setHorizontalHeaderLabels(flight_headers)
         self.ui.tableFlights.resizeColumnsToContents()
         self.ui.tableConfig.setColumnCount(15)
