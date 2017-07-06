@@ -4,10 +4,12 @@ import sys
 from main_gui import MatplotlibWidget
 import random
 
-flight_headers = ['call', 'icao', 'type', 'opTimestamp','opTimestampDate','pos_count','V(fpm)','GS(kts)','(deg)',
-              'track','runway','change_comm','miss_comm','op_comm', 'waypoints']
+flight_headers = ['call', 'icao', 'type', 'operator', 'opTimestamp','opTimestampDate','#pos','V(fpm)','GS(kts)','(deg)',
+              'track','runway', 'L/T', 'change_comm','miss_comm','op_comm', 'waypoints']
 config_headers = ['From time', 'Until time', 'Duration', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
                   'missed', 'Slack (min)']
+comboBox_config_options = ['N&S', 'N', 'S']
+comboBox_plotBin_options = ['10', '15', '30', '60', '120']
 
 
 class Controller:
@@ -18,13 +20,19 @@ class Controller:
         self.threadSample = ThreadSample(self, self.ui.Configuration)
 
         # table
-        self.ui.tableFlights.setColumnCount(15)
+        self.ui.tableFlights.setColumnCount(17)
         self.ui.tableFlights.setRowCount(self.core.operations_table_rows)
         self.ui.tableFlights.setHorizontalHeaderLabels(flight_headers)
         self.ui.tableFlights.resizeColumnsToContents()
         self.ui.tableConfig.setColumnCount(15)
         self.ui.tableConfig.setHorizontalHeaderLabels(config_headers)
         self.ui.tableConfig.resizeColumnsToContents()
+
+        # comboboxes
+        for t in comboBox_config_options:
+            self.ui.comboBox_config.addItem(t)
+        for t in comboBox_plotBin_options:
+            self.ui.comboBox_plotBin.addItem(t)
 
         # connections
         self.ui.btnOpen.clicked.connect(self.openFileNamesDialog)

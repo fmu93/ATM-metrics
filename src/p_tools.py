@@ -46,12 +46,18 @@ class IcaoDatabase:
                 line = icao_data_line.split(',')
                 self.icao_database[line[0].upper()] = line
 
-    def get_type(self, icao):
+    def get_mdl(self, icao):
         if icao.upper() in self.icao_database.keys():
             return self.icao_database[icao.upper()][2]
 
     def get_regid(self, icao):
         if icao.upper() in self.icao_database.keys():
             return self.icao_database[icao.upper()][1]
+
+    def get_operator(self, icao):
+        if icao.upper() in self.icao_database.keys():
+            return self.icao_database[icao.upper()][4].replace('\n', '')
+
+    # TODO get list of unique operators
 
 icao_database = IcaoDatabase()

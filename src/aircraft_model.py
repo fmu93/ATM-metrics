@@ -15,9 +15,10 @@ class Aircraft:
         self.last_kolls = None
         self.pos_buffer_dict = {}  # [epoch] records all positions but only few minutes before
         self.vel_buffer_dict = {}  # [epoch]
-        self.type = icao_database.get_type(self.icao)
+        self.type = icao_database.get_mdl(self.icao)
         self.regid = icao_database.get_regid(self.icao)
-        self.not_an_aircraft = True
+        self.operator = icao_database.get_operator(self.icao)
+        self.not_an_aircraft = True  # TODO this is usefull but can also be an ac taxxing arounf and days later it shows up as an aircraft
 
     def set_call(self, new_call, epoch):
         if not self.flights_dict.keys():
@@ -163,14 +164,14 @@ class Flight:
                 if i > 0:
                     if prev_LorT == 'L' and validated_op.LorT == 'L':
                         # two consecutive attempts to land
-                        operation_list[i-1].op_comment = '(first/2 approach)'
+                        operation_list[i-1].op_comment = 'first missed approach'
                         self.has_missed_app = True
                         if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
                             pass
                         else:
-                            validated_op.op_comment = '(second approach aft: ' +\
+                            validated_op.op_comment = 'second approach aft: ' +\
                                     '{:1.2f}'.format((validated_op.op_timestamp -
-                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min)'
+                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min'
                     else:
                         validated_op.op_comment = '(second operation)'  # with new callsign keying model we don't need this
 
@@ -416,7 +417,7 @@ class Operation:
                         if zone.zone > 0 and self.op_runway:
                             if guess_str[0:2] == self.op_runway[0:2] and guess_str != self.op_runway:
                                 # next zone guess has same runway but not side (or event)
-                                self.zone_change_comment = 'approach from ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                self.zone_change_comment = '> ' + guess_str + ' @Z' + str(zone.zone)
                                 break
                         elif not self.op_runway and zone.zone < 4:
                             self.op_runway = guess_str
@@ -424,7 +425,7 @@ class Operation:
                     elif zone.UorD == 'U':
                         if not zone.is_miss:  # take off
                             if self.op_runway and guess_str not in self.op_runway:
-                                self.zone_change_comment = 'departure towards ' + guess_str + ' at zone ' + str(zone.zone) + ' '
+                                self.zone_change_comment = '> ' + guess_str + ' @Z' + str(zone.zone)
                                 break  # TODO don't stack up performances
                             else:
                                 self.op_runway = guess_str
@@ -441,9 +442,12 @@ class Operation:
 
     def get_op_rows(self):
         return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.type,
+                (self.flight.aircraft.operator if len(self.flight.aircraft.operator)<=8 else self.flight.aircraft.operator[0:8]),
                 ('{:.0f}'.format(self.op_timestamp) if self.op_timestamp else 'None'),
-                time_string(self.op_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()), '{:3.0f}'.format(self.get_mean_gs()),
+                time_string(self.op_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),
+                '{:3.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,
+                self.LorT,
                 self.zone_change_comment, self.miss_comment, self.op_comment, ', '.join(self.flight.waypoints)]
 
     def get_mean_vrate(self):

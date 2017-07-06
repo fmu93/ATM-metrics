@@ -213,6 +213,8 @@ class Metrics:
                                         self.epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
         database.close()
+        # progress bar to 100% TODO program hangs because of this
+        # self.dataExtractor.core.controller.threadSample.update_progressbar(100)
 
     def stop(self):
         self.dead = True
