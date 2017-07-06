@@ -330,6 +330,9 @@
          <property name="displayFormat">
           <string>yyyy-MM-dd hh:mm:ss</string>
          </property>
+         <property name="calendarPopup">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item row="1" column="4">
@@ -351,6 +354,9 @@
          <property name="displayFormat">
           <string>yyyy-MM-dd hh:mm:ss</string>
          </property>
+         <property name="calendarPopup">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>
@@ -365,7 +371,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="Configuration">
         <property name="sizePolicy">

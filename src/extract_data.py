@@ -3,6 +3,7 @@ from p_tools import time_string
 from core import airport_altitude, guess_alt_ths
 from aircraft_model import Aircraft
 from geo_resources import *
+import time
 
 
 class Metrics:
@@ -41,6 +42,8 @@ class Metrics:
                 continue
             if self.dead:
                 break
+            while self.dataExtractor.paused:
+                time.sleep(0.1)
 
             data = master_line.split('\t')
             self.epoch_now = float(data[0])
@@ -57,7 +60,7 @@ class Metrics:
                     self.dataExtractor.dispTime(time_string(self.epoch_now))
                     print_time = False
                     # progress bar
-                    self.dataExtractor.core.controller.threadSample.update_progressbar(100 * self.line_count /
+                    self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
                                                                           self.dataExtractor.num_lines)
             else:
                 print_time = True
@@ -214,7 +217,7 @@ class Metrics:
 
         database.close()
         # progress bar to 100% TODO program hangs because of this
-        # self.dataExtractor.core.controller.threadSample.update_progressbar(100)
+        self.dataExtractor.core.controller.update_progressbar(100)
 
     def stop(self):
         self.dead = True

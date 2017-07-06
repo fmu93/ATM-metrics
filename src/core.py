@@ -4,6 +4,7 @@ import main_gui
 import threading
 import analysis
 from p_tools import sortedDictKeys, get_file_name
+import Queue
 
 no_call = 'no_call'
 miss_event = 'missed? '
@@ -19,7 +20,6 @@ class DataExtractorThread(threading.Thread):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
         self.setDaemon(True)
-        self.setName("DataExtractorThread")
         self.infiles = infiles
         self.infiles_dict = {}
         self.core = core
@@ -30,6 +30,7 @@ class DataExtractorThread(threading.Thread):
         self.first_file = None
         self.file_count = 1
         self.forced_exit = False
+        self.paused = False
 
     def shutdown(self):
         """Stop this thread"""
@@ -56,7 +57,7 @@ class DataExtractorThread(threading.Thread):
             if not self.first_file:
                 self.first_file = self.infiles_dict[timestamp]
             print self.infiles_dict[timestamp].name
-            self.core.controller.threadSample.setCurrent('File %d/%d: %s'
+            self.core.controller.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
                                                get_file_name(self.infiles_dict[timestamp])))
             # icao_filter = '4ca5bb'
@@ -67,7 +68,7 @@ class DataExtractorThread(threading.Thread):
             self.core.done()
 
     def dispTime(self, timeStr):
-        self.core.controller.threadSample.setClock(timeStr)
+        self.core.controller.setClock(timeStr)
 
 
 class OperationRefreshThread(threading.Thread):
@@ -77,11 +78,11 @@ class OperationRefreshThread(threading.Thread):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
         self.setDaemon(True)
-        self.setName("OperationRefreshThread")
         self._interval = 3
         self.core = core
         self.dataExtractor = dataExtractor
         self.operation_dict = {}
+        self.paused = False
 
     def setInterval(self, interval):
         """Set the number of seconds we sleep between executing our task"""
@@ -100,23 +101,21 @@ class OperationRefreshThread(threading.Thread):
             self._finished.wait(self._interval)
 
     def task(self):
-        """The task done by this thread - override in subclasses"""
-        new_op_list = []
-        for aircraft in self.dataExtractor.icao_dict.values():
-                for flight in aircraft.flights_dict.values():
-                    if len(flight.operations) > 0 and \
-                                    flight.operations[-1].last_op_guess >= flight.operations[-1].last_validation:
-                        # only compute/validate operation of aircraft which had a new guess from last validation
-                        for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
-                            if operation.op_timestamp is not None:  # TODO why are some op_timestamp None?
-                                # TODO make sure operations are properly computed... if one validation makes one op but then it/
-                                # was another one, both remain instead of overwritting
-                                # final_operations_list.append(operation)
-                                self.operation_dict[operation] = operation
-                                new_op_list.append(operation)
-        self.display()
-        new_op_list.sort()
-        # print 'Refreshing ' + str(len(new_op_list)) + ' of ' + str(len(self.operation_dict.keys())) + ' flights:'
+        if not self.paused:
+            """The task done by this thread - override in subclasses"""
+            for aircraft in self.dataExtractor.icao_dict.values():
+                    for flight in aircraft.flights_dict.values():
+                        if len(flight.operations) > 0 and \
+                                        flight.operations[-1].last_op_guess >= flight.operations[-1].last_validation:
+                            # only compute/validate operation of aircraft which had a new guess from last validation
+                            for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
+                                if operation.op_timestamp is not None:  # TODO why are some op_timestamp None?
+                                    # TODO make sure operations are properly computed... if one validation makes one op but then it/
+                                    # was another one, both remain instead of overwritting
+                                    # final_operations_list.append(operation)
+                                    self.operation_dict[operation] = operation
+
+            self.display()
 
     def display(self):
         op_list = []
@@ -128,12 +127,15 @@ class OperationRefreshThread(threading.Thread):
             config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
 
             config_list.sort(reverse=True)
-            self.core.controller.threadSample.update_tableConfig(config_list)
+            self.core.controller.update_tableConfig(config_list)
             op_list.sort(reverse=True)
             # small efficiency trick
-            self.core.controller.threadSample.update_tableFlights(
-                op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list)
+            self.core.controller.update_tableFlights(
+                op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list,
+
+                self.dataExtractor.extract_data.epoch_now)
             self.core.controller.histo.update_figure(op_list, config_list)
+
 
 
 class Core:
@@ -148,33 +150,38 @@ class Core:
         if self.infiles:
             self.dataExtractor = DataExtractorThread(self.infiles, self)
             self.operationRefresh = OperationRefreshThread(self.dataExtractor, self)
-            dataExtractorThread = threading.Thread(target=self.dataExtractor.run, args=())
-            operationRefreshThread = threading.Thread(target=self.operationRefresh.run, args=())
+            dataExtractorThread = threading.Thread(target=self.dataExtractor.run, name='dataExtractor', args=())
+            operationRefreshThread = threading.Thread(target=self.operationRefresh.run, name='operationRefresh', args=())
             dataExtractorThread.start()
             operationRefreshThread.start()
-            self.controller.threadSample.setHap('Running')
-            self.controller.threadSample.update_progressbar(0)
+            self.controller.setHap('Running')
+            self.controller.update_progressbar(0)
 
     def stop(self):
         try:
             self.dataExtractor.shutdown()
             self.operationRefresh.shutdown()
             print 'threads killed!'
-            self.controller.threadSample.setHap('Threads killed!')
+            self.controller.setHap('Threads killed!')
         except Exception:
             print 'Can\'t kill threads'
-            self.controller.threadSample.setHap('Can\'t kill threads')
+            self.controller.setHap('Can\'t kill threads')
 
-    def pause(self):  # TODO make pause/resume button
-        try:
-            pass
-        except:
-            pass
+    def pause(self):
+        if self.dataExtractor.paused:
+            self.dataExtractor.paused = False
+            self.operationRefresh.paused = False
+            self.controller.setHap('Running')
+            self.controller.ui.btnPause.setText('Pause')
+        else:
+            self.dataExtractor.paused = True
+            self.operationRefresh.paused = True
+            self.controller.setHap('threads paused')
+            self.controller.ui.btnPause.setText('Resume')
 
     def done(self):
         self.operationRefresh.shutdown()
-        self.controller.threadSample.setHap('Done')
-        # self.controller.threadSample.update_progressbar(100)
+        self.controller.setHap('Done')
 
     def set_controller(self, controller):
         self.controller = controller

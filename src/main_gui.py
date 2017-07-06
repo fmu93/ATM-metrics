@@ -152,6 +152,7 @@ class Ui_Form(object):
         self.gridLayout_7.addWidget(self.comboBox_config, 2, 2, 1, 1)
         self.dateTimeEdit_filterEnd = QtWidgets.QDateTimeEdit(Form)
         self.dateTimeEdit_filterEnd.setDate(QtCore.QDate(2020, 1, 1))
+        self.dateTimeEdit_filterEnd.setCalendarPopup(True)
         self.dateTimeEdit_filterEnd.setObjectName("dateTimeEdit_filterEnd")
         self.gridLayout_7.addWidget(self.dateTimeEdit_filterEnd, 2, 4, 1, 1)
         self.label = QtWidgets.QLabel(Form)
@@ -161,6 +162,7 @@ class Ui_Form(object):
         self.label_14.setObjectName("label_14")
         self.gridLayout_7.addWidget(self.label_14, 1, 3, 1, 1)
         self.dateTimeEdit_filterStart = QtWidgets.QDateTimeEdit(Form)
+        self.dateTimeEdit_filterStart.setCalendarPopup(True)
         self.dateTimeEdit_filterStart.setObjectName("dateTimeEdit_filterStart")
         self.gridLayout_7.addWidget(self.dateTimeEdit_filterStart, 2, 3, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_7)
@@ -229,17 +231,6 @@ class Ui_Form(object):
         self.verticalLayout_5.addWidget(self.lbl_histo)
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
-
-        # self.matplotlibWidget = MatplotlibWidget(self.Configuration)
-        # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        # sizePolicy.setHorizontalStretch(0)
-        # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(self.matplotlibWidget.sizePolicy().hasHeightForWidth())
-        # self.matplotlibWidget.setSizePolicy(sizePolicy)
-        # self.matplotlibWidget.setObjectName("matplotlibWidget")
-        # self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.matplotlibWidget)
-        # self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
-        # self.horizontalLayout_5.setObjectName("horizontalLayout_5")
 
         self.matplotlibWidget = MatplotlibWidget(self.Configuration)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
@@ -673,7 +664,16 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         self.layoutVertical.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.layoutVertical.setContentsMargins(0, 0, 0, 0)
         self.nav = NavigationToolbar(self.canvas, self)
+
+        self.prop = QtWidgets.QLabel(self)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.prop.sizePolicy().hasHeightForWidth())
+        self.prop.setSizePolicy(sizePolicy)
+
         self.layoutVertical.addWidget(self.nav)
+        self.layoutVertical.addWidget(self.prop)
         self.layoutVertical.addWidget(self.scroll)
 
         # self.scroll.resize(self.layoutVertical.geometry().width(), self.layoutVertical.geometry().height())
@@ -684,11 +684,12 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         self.scroll_resize = False
         self.show_labels = False
         self.stacked = True
+        self.gridOn = True
         self.reset_fig()
 
     def reset_fig(self):
         self.axes.clear()
-        self.axes.grid(True)
+        self.axes.grid(self.gridOn)
         self.axes.set_title('Dep/Arr', loc='center')
         self.resize_fig()
 
@@ -703,7 +704,7 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
                                         (self.scroll.height()-20) / float(dpi1))
             self.canvas.resize(self.figure.get_figwidth()*float(dpi1), self.figure.get_figheight()*float(dpi1))
 
-    def update_figure(self, op_list, config_list):  # TODO x axis
+    def update_figure(self, op_list, config_list):  # TODO x axis, adaptive labels and grid
         self.reset_fig()
         # operation histogram
         last_time = op_list[0].op_timestamp - op_list[0].op_timestamp % (self.binsize * 60)
@@ -721,7 +722,7 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
                                                       color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
             if max(n1) > self.max_y:
                 self.max_y = max(n1)
-        else:
+        else:  # TODO adapt all to stacked or not
             [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, histtype='bar', rwidth=0.9,
                                                       color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
 
@@ -744,9 +745,8 @@ class MatplotlibWidget(QtWidgets.QWidget):  # TODO script this class in controll
         avg = np.average(n1)
         # avg = np.average([x+y for x, y in zip(n0, n1)])
         self.axes.plot(self.bins, [avg] * len(self.bins), 'k--', linewidth=0.6)
-        self.axes.text(0, self.max_y*1.05,
-                       "Average throughput per bin: " + '{:.1f}'.format(avg) + "\nBin size is: " +
-                       '{:d}'.format(self.binsize) + " min")
+        self.prop.setText("\tBin size is: " + '{:d}'.format(self.binsize) + " min\t"
+                          "Average throughput per bin: " + '{:.1f}'.format(avg))
 
         # show plot
         self.axes.set_xticks(self.bins)

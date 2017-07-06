@@ -17,7 +17,6 @@ class Controller:
         self.core = core.coreClass
         self.ui = ui
         self.core.set_controller(self)
-        self.threadSample = ThreadSample(self, self.ui.Configuration)
 
         # table
         self.ui.tableFlights.setColumnCount(17)
@@ -40,6 +39,11 @@ class Controller:
         self.ui.btnWrite.clicked.connect(self.core.write_analysis)
         self.ui.btnStop.clicked.connect(self.core.stop)
         self.ui.btnPause.clicked.connect(self.core.pause)
+        self.ui.checkBox_stacked.stateChanged.connect(self.state_stacked)
+        self.ui.checkBox_scrollable.stateChanged.connect(self.state_scrollable)
+        self.ui.checkBox_labels.stateChanged.connect(self.state_labels)
+        # self.ui.checkBox_gridOn.stateChanged.connect(self.state_grid)
+
 
         # pallete
         self.color1 = QtGui.QColor('#F7F8F9')  # rest
@@ -78,27 +82,18 @@ class Controller:
         if files:
             self.core.infiles = [file(infile) for infile in files]
             print(files)
-        self.threadSample.setCurrent('%d files selected' % (len(files)))
+        self.setCurrent('%d files selected' % (len(files)))
 
-
-class ThreadSample(QtCore.QThread):
-    def __init__(self, controller, parent=None):
-        super(ThreadSample, self).__init__(parent)
-        self.controller = controller
-
-    @QtCore.pyqtSlot()
-    def update_tableFlights(self, op_list):
-        op_list.sort(reverse=True)
-        self.controller.ui.tableFlights.clearContents()
-        epoch_now = self.controller.core.dataExtractor.extract_data.epoch_now
+    def update_tableFlights(self, op_list, epoch_now):
+        self.ui.tableFlights.clearContents()
         for m, op in enumerate(op_list):
             for n, item in enumerate(op.get_op_rows()):
                 newItem = QtWidgets.QTableWidgetItem(item)
                 color = None
                 if epoch_now - op.op_timestamp < 900:
-                    color = self.controller.color3
+                    color = self.color3
                 elif epoch_now - op.op_timestamp < 3600:
-                    color = self.controller.color2
+                    color = self.color2
 
                 if color:
                     if m % 2:
@@ -107,26 +102,25 @@ class ThreadSample(QtCore.QThread):
                     brush.setStyle(QtCore.Qt.SolidPattern)
                     newItem.setBackground(brush)
 
-                self.controller.ui.tableFlights.setItem(m, n, newItem)
-        self.controller.ui.tableFlights.resizeColumnsToContents()
+                self.ui.tableFlights.setItem(m, n, newItem)
+        self.ui.tableFlights.resizeColumnsToContents()
 
-    @QtCore.pyqtSlot()
     def update_tableConfig(self, config_list):
-        self.controller.ui.tableConfig.clearContents()
+        self.ui.tableConfig.clearContents()
         for m, config in enumerate(config_list):
-            if m == self.controller.ui.tableConfig.rowCount():
-                self.controller.ui.tableConfig.setRowCount(m+1)
+            if m == self.ui.tableConfig.rowCount():
+                self.ui.tableConfig.setRowCount(m+1)
             for n, item in enumerate(config.listed()):
                 newItem = QtWidgets.QTableWidgetItem(item)
                 color = None
                 if n < 3 or n > 12:
-                    color = self.controller.color7
+                    color = self.color7
                 elif 2 < n < 5:
-                    color = self.controller.color6
+                    color = self.color6
                 elif 4 < n < 9:
-                    color = self.controller.color4
+                    color = self.color4
                 elif 8 < n < 13:
-                    color = self.controller.color5
+                    color = self.color5
 
                 if color:
                     if m % 2:
@@ -135,28 +129,35 @@ class ThreadSample(QtCore.QThread):
                     brush.setStyle(QtCore.Qt.SolidPattern)
                     newItem.setBackground(brush)
 
-                self.controller.ui.tableConfig.setItem(m, n, newItem)
-        self.controller.ui.tableConfig.resizeColumnsToContents()
+                self.ui.tableConfig.setItem(m, n, newItem)
+        self.ui.tableConfig.resizeColumnsToContents()
 
-    @QtCore.pyqtSlot(str)
     def setClock(self, timeStr):
-        self.controller.ui.lblTime.setText(timeStr)
+        self.ui.lblTime.setText(timeStr)
 
-    @QtCore.pyqtSlot()
     def setCurrent(self, string):
-        self.controller.ui.lblCurrent.setText(string)
+        self.ui.lblCurrent.setText(string)
 
-    @QtCore.pyqtSlot()
     def setHap(self, string):
-        self.controller.ui.lblHap.setText(string)
+        self.ui.lblHap.setText(string)
 
-    @QtCore.pyqtSlot(float)
     def update_progressbar(self, val):
-        self.controller.ui.progressBar.setValue(val)
+        self.ui.progressBar.setValue(val)
 
-    @QtCore.pyqtSlot()
     def update_histo(self):
-        self.controller.histo.update_figure()
+        self.histo.update_figure()
+
+    def state_stacked(self, checked):
+        self.ui.matplotlibWidget.stacked = checked
+
+    def state_scrollable(self, checked):
+        self.ui.matplotlibWidget.scroll_resize = checked
+
+    def state_grid(self, checked):
+        self.ui.matplotlibWidget.gridOn = checked
+
+    def state_labels(self, checked):
+        self.ui.matplotlibWidget.show_labels = checked
 
 
 def make_controller(ui):

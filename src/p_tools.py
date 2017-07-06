@@ -14,7 +14,7 @@ def duration_string(seconds):
     if seconds is None:
         return "unknown duration"
     if seconds > 86400:
-        days = seconds / 86400
+        days = int(seconds / 86400)
         seconds = seconds - days*86400
         string = '%sd %s:%s:%s' % (days, '{:02.0f}'.format(seconds / 3600),
                                    '{:02.0f}'.format((seconds % 3600) / 60),
@@ -47,16 +47,22 @@ class IcaoDatabase:
                 self.icao_database[line[0].upper()] = line
 
     def get_mdl(self, icao):
+        mdl = 'None'
         if icao.upper() in self.icao_database.keys():
-            return self.icao_database[icao.upper()][2]
+            mdl = self.icao_database[icao.upper()][2]
+        return mdl
 
     def get_regid(self, icao):
+        regid = 'None'
         if icao.upper() in self.icao_database.keys():
-            return self.icao_database[icao.upper()][1]
+            regid = self.icao_database[icao.upper()][1]
+        return regid
 
     def get_operator(self, icao):
+        operator = 'None'
         if icao.upper() in self.icao_database.keys():
-            return self.icao_database[icao.upper()][4].replace('\n', '')
+            operator = self.icao_database[icao.upper()][4].replace('\n', '')
+        return operator
 
     # TODO get list of unique operators
 

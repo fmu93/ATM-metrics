@@ -18,7 +18,7 @@ class Aircraft:
         self.type = icao_database.get_mdl(self.icao)
         self.regid = icao_database.get_regid(self.icao)
         self.operator = icao_database.get_operator(self.icao)
-        self.not_an_aircraft = True  # TODO this is usefull but can also be an ac taxxing arounf and days later it shows up as an aircraft
+        self.not_an_aircraft = True  # TODO this is useful but can also be an ac taxiing around and days later it shows up as an aircraft
 
     def set_call(self, new_call, epoch):
         if not self.flights_dict.keys():
@@ -442,7 +442,7 @@ class Operation:
 
     def get_op_rows(self):
         return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.type,
-                (self.flight.aircraft.operator if len(self.flight.aircraft.operator)<=8 else self.flight.aircraft.operator[0:8]),
+                (self.flight.aircraft.operator if len(self.flight.aircraft.operator) <= 8 else self.flight.aircraft.operator[0:8]),
                 ('{:.0f}'.format(self.op_timestamp) if self.op_timestamp else 'None'),
                 time_string(self.op_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),
                 '{:3.0f}'.format(self.get_mean_gs()),
