@@ -19,21 +19,22 @@ class FlightsLog:
             guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\t(deg)\t"\
             "track\trunway\tchange_comment\tmiss_comment\top_comment\twaypoints\n")
             for operation in self.final_op_list:
-                date = time_string(operation.op_timestamp)
-                hour = time.gmtime(operation.op_timestamp).tm_hour
+                date = time_string(operation.get_op_timestamp())
+                hour = time.gmtime(operation.get_op_timestamp()).tm_hour
                 if hour - prev_hour != 0:
                     guess_log_file.write('\n')
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                                          ('{:<8}'.format(operation.flight.callsign.call), '{:6}'.format(operation.flight.aircraft.icao),
-                                          '{:4}'.format(operation.flight.aircraft.type), '{:.0f}'.format(operation.op_timestamp),
+                                          '{:4}'.format(operation.flight.aircraft.type),
+                                          ('{:.0f}'.format(operation.get_op_timestamp()) if operation.get_op_timestamp() else 'None'),
                                           date, '{:1}'.format(operation.guess_count),'{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
                                           '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway, operation.zone_change_comment,
                                           operation.miss_comment, operation.op_comment, ', '.join(operation.flight.waypoints)))
                 except Exception:
                     print 'Error in logging!!'
-                    guess_log_file.write('Error with logging ' + '{:6}'.format(operation.flight.aircraft.icao))
+                    guess_log_file.write('Error with logging ' + '{:6}'.format(operation.flight.aircraft.icao) + '\n')
                 prev_hour = hour
 
 
@@ -77,8 +78,8 @@ class ConfigLog:
             last_config = None
             config = None
             for operation in self.final_op_list:
-                if operation.op_timestamp is not None and operation.op_runway:
-                    first_epoch = operation.op_timestamp
+                if operation.get_op_timestamp() and operation.op_runway:
+                    first_epoch = operation.get_op_timestamp()
                     if '32' in operation.op_runway or '36' in operation.op_runway:
                         last_config = 'N'
                         config = 'N'
@@ -88,7 +89,7 @@ class ConfigLog:
                     break
 
             from_epoch = first_epoch
-            last_epoch = self.final_op_list[-1].op_timestamp
+            last_epoch = self.final_op_list[-1].get_op_timestamp()
             until_epoch = last_epoch
 
             counter = [0, 0, 0, 0, 0, 0, 0, 0, 0]  # 32L, 32R, 36L, 36R, 18L, 18R, 14L, 14R...
@@ -98,10 +99,10 @@ class ConfigLog:
             prev_op = '-'
             log = False
             for operation in self.final_op_list:
-                op_timestamp = operation.op_timestamp
+                op_timestamp = operation.get_op_timestamp()
                 op = operation.op_runway
 
-                if op_timestamp is not None and op and prev_op:
+                if op_timestamp and op and prev_op:
                     if '32' in op or '36' in op:  # now NORTH
                         if '18' in prev_op or '14' in prev_op:  # prev south
                             until_epoch = prev_timestamp
@@ -134,7 +135,7 @@ class ConfigLog:
                     except Exception:
                         print 'error in op_timestamp, type: ' + type(op_timestamp)  # doesnt make sense this here...
 
-                    prev_timestamp = operation.op_timestamp
+                    prev_timestamp = operation.get_op_timestamp()
                     prev_op = operation.op_runway
 
             self.add_config(last_config, from_epoch, last_epoch, counter, miss_count)

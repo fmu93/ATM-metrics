@@ -1,7 +1,11 @@
 from p_tools import icao_database, time_string, sortedDictKeys
-from core import no_call, airport_altitude
 from geo_resources import runway_ths_dict
 from geopy.distance import great_circle
+
+use_alt_ths_timestamp = False
+no_call = 'no_call'
+airport_altitude = 600  # [m]
+alt_threshold = airport_altitude + 800
 
 
 class Aircraft:
@@ -18,6 +22,8 @@ class Aircraft:
         self.type = icao_database.get_mdl(self.icao)
         self.regid = icao_database.get_regid(self.icao)
         self.operator = icao_database.get_operator(self.icao)
+        self.last_waypoint_check = 0
+        self.buffer_time = 420  # s
         self.not_an_aircraft = True  # TODO this is useful but can also be an ac taxiing around and days later it shows up as an aircraft
 
     def set_call(self, new_call, epoch):
@@ -81,7 +87,7 @@ class Aircraft:
         if self.not_an_aircraft and alt > airport_altitude + 100:
             self.not_an_aircraft = False
         for key in sorted(self.pos_buffer_dict):
-            if epoch - key > 300:
+            if epoch - key > self.buffer_time:
                 self.pos_buffer_dict.pop(key, None)  # remove key for old position
         self.pos_buffer_dict[epoch] = Position(lat, lon, alt, epoch)
 
@@ -92,7 +98,7 @@ class Aircraft:
 
     def set_new_vel(self, epoch, vrate, gs, ttrack):
         for key in sorted(self.vel_buffer_dict):
-            if epoch - key > 300:
+            if epoch - key > self.buffer_time:
                 self.vel_buffer_dict.pop(key, None)  # remove key for old entry
         self.vel_buffer_dict[epoch] = Velocity(epoch, vrate, gs, ttrack)
 
@@ -166,12 +172,12 @@ class Flight:
                         # two consecutive attempts to land
                         operation_list[i-1].op_comment = 'first missed approach'
                         self.has_missed_app = True
-                        if validated_op.op_timestamp is None or operation_list[i-1].op_timestamp is None:
+                        if validated_op.get_op_timestamp() is None or operation_list[i-1].get_op_timestamp() is None:
                             pass
                         else:
                             validated_op.op_comment = 'second approach aft: ' +\
-                                    '{:1.2f}'.format((validated_op.op_timestamp -
-                                                      operation_list[i - 1].op_timestamp) / 60.0) + ' min'
+                                    '{:1.2f}'.format((validated_op.get_op_timestamp() -
+                                                      operation_list[i - 1].get_op_timestamp()) / 60.0) + ' min'
                     else:
                         validated_op.op_comment = '(second operation)'  # with new callsign keying model we don't need this
 
@@ -196,16 +202,16 @@ class Operation:
         self.IorO = None  # In or Out of airport, Approach or Take-Off
         self.LorT = None  # basically same as IorO but only after validation
         self.guess_count = 0
-        self.min_times = 3
+        self.min_pos_valid = 2
         self.vrate_list = []
         self.inclin_list = []
         self.gs_list = []
         self.track_list = []
 
-        self.op_timestamp = None
+        self.runway_ths_timestamp = None
         self.pref = None
-        self.alt_ths_timestamp = 0
-        self.threshold = airport_altitude + 800  # [m]     airport_altitude + 600  # m
+        self.alt_ths_timestamp = None
+        self.threshold = alt_threshold  # [m]     airport_altitude + 600  # m
         self.op_runway = ''
         self.op_comment = ''
         self.zone_change_comment = ''
@@ -217,7 +223,7 @@ class Operation:
         self.miss_guess_min = 5
 
     def __lt__(self, other):
-        return self.op_timestamp < other.op_timestamp  # to be able to sort
+        return self.get_op_timestamp() < other.get_op_timestamp()  # to be able to sort
 
     def set_op_guess(self, epoch, NorS, EorW, track, vrate, inclin, gs, zone):
         # check for time between guesses
@@ -322,7 +328,7 @@ class Operation:
             guess_str = runway + side
             # timestamp as close to zone 0, but not inside zone 0
             if 0 < zone < 4:
-                self.set_timestamp(epoch, zone, UorD)
+                self.set_runway_ths_timestamp(epoch, zone, UorD)
                 self.last_op_guess = epoch
                 self.guess_count += 1
 
@@ -331,35 +337,24 @@ class Operation:
 
             self.op_guess_dict[guess_str].set_guess_zone(epoch, zone)
 
-        return self.op_timestamp
+        return self.get_op_timestamp()
 
-    def set_timestamp(self, epoch, zone, UorD):
+    def set_runway_ths_timestamp(self, epoch, zone, UorD):
         #  Out/takeoff, keep first -> only save first time
-        if self.IorO == 'O' and (self.op_timestamp is None or zone < self.pref):
-            self.op_timestamp = epoch
+        if self.IorO == 'O' and (self.runway_ths_timestamp is None or zone < self.pref):
+            self.runway_ths_timestamp = epoch
             self.pref = zone
         #  In/landing, always overwrite as it gets lower zone
         elif self.IorO == 'I':
-            self.op_timestamp = epoch
+            self.runway_ths_timestamp = epoch
 
     def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
         if alt > self.threshold > prev_alt or alt < self.threshold < prev_alt:
             self.alt_ths_timestamp = round(
                 prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
 
-        # sign = None
-        # if alt > self.threshold > prev_alt:
-        #     sign = 0  # up
-        # elif alt < self.threshold < prev_alt:
-        #     sign = 1  # dq
-        # if sign is not None:
-        #     if self.alt_ths_timestamp is None:
-        #         self.alt_ths_timestamp = round(prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
-        #         # self.sign = sign
-        #         # self.half = half
-        #     else:
-        #         # second self.alt_ths_timestamp. TODO Evaluate prev and actual sign and half
-        #         pass
+    def get_op_timestamp(self):
+        return self.alt_ths_timestamp if use_alt_ths_timestamp else self.runway_ths_timestamp
 
     def validate_operation(self, epoch):
         north_zones = [None, None, None, None, None]  # [Zone0, ...]
@@ -370,7 +365,7 @@ class Operation:
         south_weight = 0.0
         for op_guess in self.op_guess_dict.values():
             for zone_class in op_guess.zone_dict.values():
-                if zone_class.times <= self.min_times:
+                if zone_class.times <= self.min_pos_valid:
                     continue  # pass on weak guesses
                 if op_guess.NorS == 'N':
                     if zone_class.zone < 4:  # dont weight for zone 4
@@ -443,8 +438,8 @@ class Operation:
     def get_op_rows(self):
         return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.type,
                 (self.flight.aircraft.operator if len(self.flight.aircraft.operator) <= 8 else self.flight.aircraft.operator[0:8]),
-                ('{:.0f}'.format(self.op_timestamp) if self.op_timestamp else 'None'),
-                time_string(self.op_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),
+                ('{:.0f}'.format(self.get_op_timestamp()) if self.get_op_timestamp() else 'None'),
+                time_string(self.runway_ths_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),
                 '{:3.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,
                 self.LorT,

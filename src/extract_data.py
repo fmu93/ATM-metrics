@@ -1,9 +1,13 @@
 import numpy as np
 from p_tools import time_string
-from core import airport_altitude, guess_alt_ths
 from aircraft_model import Aircraft
 from geo_resources import *
+from shapely.geometry import LineString
 import time
+
+time_between_waypoint = 60  # s
+guess_alt_ths = 1800  # [m] above airport to discard flyovers
+airport_altitude = 600  # [m]
 
 
 class Metrics:
@@ -25,7 +29,7 @@ class Metrics:
         # self.op18R = '18R'
         # self.op18L = '18L'
 
-    def run(self, infile, icao_filter):
+    def run(self, key_timestamp, infile, icao_filter):
         filepath = infile.name
 
         try:
@@ -68,9 +72,11 @@ class Metrics:
             if icao_filter is not None and icao0 != icao_filter:
                 continue
 
-            if icao0 not in self.dataExtractor.icao_dict.keys():
-                self.dataExtractor.icao_dict[icao0] = Aircraft(icao0, self.epoch_now)
-            current_aircraft = self.dataExtractor.icao_dict[icao0]
+            icao_dict = self.dataExtractor.files_data_dict[key_timestamp]
+
+            if icao0 not in icao_dict.keys():
+                icao_dict[icao0] = Aircraft(icao0, self.epoch_now)
+            current_aircraft = icao_dict[icao0]
             current_aircraft.last_seen = self.epoch_now
 
             call = str(data[3]).strip()
@@ -102,11 +108,20 @@ class Metrics:
                 if FL is not None and FL < 130:  # FL130
                     pos = Point(lon, lat)
 
-            if pos is not None and TMA.contains(pos):
+            # detect waypoints, compute only every time_between_waypoint for efficiency
+            if pos:
+                line = None
+                if self.epoch_now - current_aircraft.last_waypoint_check > time_between_waypoint:
+                    prev120_300_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 300)
+                    if prev120_300_pos:
+                        line = LineString([pos, (prev120_300_pos.lon, prev120_300_pos.lat)])
+                if line:
+                    for waypoint in waypoints_dict.keys():  # TODO this may be heavy processing. Categorize waypoints in rings from airport
+                        if line.crosses(waypoints_dict[waypoint]):
+                            current_flight.set_waypoint(waypoint)
+                    current_aircraft.last_waypoint_check = self.epoch_now
 
-                for waypoint in waypoints_dict.keys():
-                    if waypoints_dict[waypoint].contains(pos):
-                        current_flight.set_waypoint(waypoint)
+            if pos and TMA.contains(pos):
 
                 NorS = None
                 EorW = None
@@ -193,12 +208,12 @@ class Metrics:
                                 elif poly_D3.contains(pos):
                                     poly = 'D3'
 
-                        if poly is not None:
+                        if poly:
                             zone = int(poly[1])
                             current_flight.set_guess(self.epoch_now, NorS, EorW, ttrack, vrate, inclin, gs, zone)
 
                             # here we set the alt_ths_operation timestamp
-                            if current_aircraft.last_kolls is not None and self.epoch_now - current_aircraft.last_kolls < 900:
+                            if current_aircraft.last_kolls and self.epoch_now - current_aircraft.last_kolls < 900:
                                 current_diff = current_aircraft.get_current_diff()
                                 if self.epoch_now - self.last_generic_diff > 600:
                                     self.generic_current_diff = current_diff
@@ -207,17 +222,17 @@ class Metrics:
                                 current_diff = self.generic_current_diff
                             alt_corr = alt_uncorrected - current_diff
 
-                            prev30_10_pos = current_aircraft.get_position_delimited(self.epoch_now, 10, 30)
-                            if prev30_10_pos is not None:  # can happen there was no prev data
-                                prev_alt_corr = prev30_10_pos.alt - current_diff
-                                prev_epoch = prev30_10_pos.epoch
+                            prev10_30_pos = current_aircraft.get_position_delimited(self.epoch_now, 10, 30)
+                            if prev10_30_pos:  # can happen there was no prev data
+                                prev_alt_corr = prev10_30_pos.alt - current_diff
+                                prev_epoch = prev10_30_pos.epoch
                                 if current_flight.operations:
                                     current_flight.operations[-1].set_alt_ths_timestamp(
                                         self.epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
         database.close()
-        # progress bar to 100% TODO program hangs because of this
-        self.dataExtractor.core.controller.update_progressbar(100)
+        # progress bar to 100% TODO program hangs because of this.. set range to [0-101]?
+        # self.dataExtractor.core.controller.update_progressbar(100)
 
     def stop(self):
         self.dead = True
