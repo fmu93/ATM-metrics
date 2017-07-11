@@ -5,7 +5,7 @@ from geopy.distance import great_circle
 use_alt_ths_timestamp = False
 no_call = 'no_call'
 airport_altitude = 600  # [m]
-alt_threshold = airport_altitude + 800
+alt_threshold = airport_altitude + 800  # TODO make different alt thresholds for approach and take off
 
 
 class Aircraft:
@@ -23,7 +23,8 @@ class Aircraft:
         self.regid = icao_database.get_regid(self.icao)
         self.operator = icao_database.get_operator(self.icao)
         self.last_waypoint_check = 0
-        self.buffer_time = 420  # s
+        self.buffer_time = 300  # s
+        self.min_buffer_items = 4
         self.not_an_aircraft = True  # TODO this is useful but can also be an ac taxiing around and days later it shows up as an aircraft
 
     def set_call(self, new_call, epoch):
@@ -82,14 +83,14 @@ class Aircraft:
             current_diff = float(30 * (1013 - self.current_kolls))
         return current_diff
 
-    def set_new_pos(self, epoch, lat, lon, alt):
+    def set_new_pos(self, epoch, lon, lat, alt):
         # some icao sending positions may be a ground vehicle
         if self.not_an_aircraft and alt > airport_altitude + 100:
             self.not_an_aircraft = False
         for key in sorted(self.pos_buffer_dict):
-            if epoch - key > self.buffer_time:
+            if len(self.pos_buffer_dict.keys()) > self.min_buffer_items and epoch - key > self.buffer_time:
                 self.pos_buffer_dict.pop(key, None)  # remove key for old position
-        self.pos_buffer_dict[epoch] = Position(lat, lon, alt, epoch)
+        self.pos_buffer_dict[epoch] = Position(lon, lat, alt, epoch)
 
     def get_position_delimited(self, epoch, min_bound, max_bound):
         for key in sorted(self.pos_buffer_dict, reverse=True):
@@ -98,7 +99,7 @@ class Aircraft:
 
     def set_new_vel(self, epoch, vrate, gs, ttrack):
         for key in sorted(self.vel_buffer_dict):
-            if epoch - key > self.buffer_time:
+            if len(self.pos_buffer_dict.keys()) > self.min_buffer_items and epoch - key > self.buffer_time:
                 self.vel_buffer_dict.pop(key, None)  # remove key for old entry
         self.vel_buffer_dict[epoch] = Velocity(epoch, vrate, gs, ttrack)
 
@@ -278,6 +279,7 @@ class Operation:
                     # normal 18 op
                     self.miss_guess_count = 0
                     self.possible_miss_time = None
+                    self.missed_detected = None
                     pass
                 elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
                     if not self.possible_miss_time:  # so later we get position from this moment
@@ -308,6 +310,7 @@ class Operation:
                     # normal 32 op
                     self.miss_guess_count = 0
                     self.possible_miss_time = None
+                    self.missed_detected = None
                     pass
                 elif inclin >= self.miss_inclin_ths and 0 < zone < 3:  # TODO check
                     if not self.possible_miss_time:
@@ -499,9 +502,9 @@ class ZoneTimes:
 
 
 class Position:
-    def __init__(self, lat, lon, alt, epoch):
-        self.lat = lat
+    def __init__(self, lon, lat, alt, epoch):
         self.lon = lon
+        self.lat = lat
         self.alt = alt
         self.epoch = epoch
 
@@ -526,8 +529,8 @@ class MissedApproach:
         self.dist_to_ths = None
         for runway_ths_key in runway_ths_dict.keys():
             if self.runway in runway_ths_key:
-                self.dist_to_ths = great_circle((self.position.lat, self.position.lon),
-                                                runway_ths_dict[runway_ths_key]).nautical
+                self.dist_to_ths = great_circle((self.position.lon, self.position.lat),
+                                                (runway_ths_dict[runway_ths_key].x, runway_ths_dict[runway_ths_key].y)).nautical
                 break
         self.operation.miss_comment = '(missed @ ' + '{:1.0f}'.format(self.alt*100) + ' ft, ' +\
                                       '{:1.2f}'.format(self.dist_to_ths) + ' nm from ths) '

@@ -204,6 +204,19 @@ point_WYP_VILLA = Point((-2.41056, 40.23306))
 poly_WYP_VILLA = point_WYP_VILLA.buffer(wyp_radius)
 waypoints_dict['VILLA'] = poly_WYP_VILLA
 
+# SID
+# 14R diurno
+'BARDI2Q'
+'PINAR2B'
+'VTB1Q'
+'CCS1Q'
+'RBO1B'
+'ZMR1Q'
+'NANDO1B'
+'SIE1Q'
+
+
+
 # Runways
 
 point_32L = Point(-3.554039, 40.463237)
@@ -212,18 +225,30 @@ point_18L = Point(-3.559349, 40.527936)
 point_18R = Point(-3.574792, 40.522701)
 
 runway_ths_dict = {}
-runway_ths_dict['32L'] = (-3.554039, 40.463237)
-runway_ths_dict['32R'] = (-3.536341, 40.473727)
-runway_ths_dict['18L'] = (-3.559349, 40.527936)
-runway_ths_dict['18R'] = (-3.574792, 40.522701)
+runway_ths_dict['32L'] = point_32L
+runway_ths_dict['32R'] = point_32R
+runway_ths_dict['18L'] = point_18L
+runway_ths_dict['18R'] = point_18R
 
 # analysis/visualization
 if __name__ == '__main__':
+    figsize = 6,6
+    for point in waypoints_dict.keys():
+        print point
     pts = gpd.GeoSeries([point for point in waypoints_dict.values()])
+    pts2 = gpd.GeoSeries([airport_poly, TMA])
+    pts3 = gpd.GeoSeries([point for point in runway_ths_dict.values()])
+
     plt.style.use('bmh')
+    fig, ax = plt.subplots(1, 1, figsize = (figsize))
     pts.crs = {'init': 'epsg:4326'}
-    pts.plot(marker='.', color='red', markersize=4, figsize=(8, 8))
+    # pts2.crs = {'init': 'epsg:4326'}
+    # pts3.crs = {'init': 'epsg:4326'}
+    pts.plot(marker='.', color='red', markersize=4, ax=ax)
+    pts2.plot(marker='.', color='blue', markersize=4, ax=ax)
+    pts3.plot(marker='.', color='red', markersize=4, ax=ax)
     plt.show()
+
 
 
 

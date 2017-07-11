@@ -62,7 +62,7 @@ class DataExtractorThread(threading.Thread):
             self.core.controller.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
                                                get_file_name(self.infiles_dict[timestamp])))
-            # icao_filter = '4ca5bb'
+            # icao_filter = '4ca981'
             icao_filter = None
             self.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
@@ -81,7 +81,7 @@ class OperationRefreshThread(threading.Thread):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
         self.setDaemon(True)
-        self._interval = 3
+        self._interval = 10
         self.core = core
         self.dataExtractor = dataExtractor
         self.operation_dict = {}

@@ -5,7 +5,7 @@ from geo_resources import *
 from shapely.geometry import LineString
 import time
 
-time_between_waypoint = 60  # s
+time_between_waypoint = 40  # s
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
 airport_altitude = 600  # [m]
 
@@ -20,18 +20,9 @@ class Metrics:
         self.dead = False
         self.line_count = 0
 
-        # self.op32R = '32R'
-        # self.op32L = '32L'
-        # self.op36R = '36R'
-        # self.op36L = '36L'
-        # self.op14R = '14R'
-        # self.op14L = '14L'
-        # self.op18R = '18R'
-        # self.op18L = '18L'
-
     def run(self, key_timestamp, infile, icao_filter):
+        # Open database
         filepath = infile.name
-
         try:
             database = open(filepath, 'r')
         except Exception:
@@ -39,17 +30,18 @@ class Metrics:
 
         print_time = True
         prev_epoch = 0
-        for i, master_line in enumerate(database):
+        for i, current_line in enumerate(database):
             self.line_count += 1
 
             if i == 0:  # skip header
                 continue
             if self.dead:
                 break
+            # wait while paused (triggered in GUI)
             while self.dataExtractor.paused:
                 time.sleep(0.1)
 
-            data = master_line.split('\t')
+            data = current_line.split('\t')
             self.epoch_now = float(data[0])
             icao0 = str(data[2])
 
@@ -58,6 +50,7 @@ class Metrics:
                 continue
             prev_epoch = self.epoch_now
 
+            # print hour to console and update clock and progress bar in GUI
             if self.epoch_now % 3600 == 0:
                 if print_time:
                     print time_string(self.epoch_now) + ' ...'
@@ -69,60 +62,67 @@ class Metrics:
             else:
                 print_time = True
 
+            # icao filter. For now only editable in core
             if icao_filter is not None and icao0 != icao_filter:
                 continue
 
+            # get the icao_dict where aircraft model is and get the current aircraft
             icao_dict = self.dataExtractor.files_data_dict[key_timestamp]
-
             if icao0 not in icao_dict.keys():
                 icao_dict[icao0] = Aircraft(icao0, self.epoch_now)
             current_aircraft = icao_dict[icao0]
             current_aircraft.last_seen = self.epoch_now
 
+            # check if current line has call information
             call = str(data[3]).strip()
             if call:  # call found in or outside airport.
-                if call+icao0 not in self.dataExtractor.call_icao_list:  # record call+icao0 if seen more than once
+                # record call+icao0 if seen more than once to avoid corrupt callsigns ()
+                if call+icao0 not in self.dataExtractor.call_icao_list:
                     self.dataExtractor.call_icao_list.append(call+icao0)
                 else:
                     current_aircraft.set_call(call, self.epoch_now)  # already fixes unknown call to op_timestamp
             current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
 
+            # check if current line has velocity information and save it to the aircraft velocity buffer
             if str(data[8]) and str(data[9]) and str(data[10]):
                 current_aircraft.set_new_vel(self.epoch_now, float(data[8]), float(data[9]), float(data[10]))
 
+            # check if current line has kollsman value
             if data[16]:  # kollsman found
                 current_aircraft.set_kolls(float(data[16]), self.epoch_now)
 
+            # check if current line has position and altitude information
             pos = None
-            if data[4] and data[5]:  # latitude information
-                lat = float(data[4])
-                lon = float(data[5])
-                FL = None
-                alt_uncorrected = None
+            FL = None
+            alt_uncorrected = None
+            if data[4] and data[5] and (data[6] or data[7]):
+                # VERY IMPORTANT! (lon, lat) as in (x, y) coordinates, everywhere in the program
+                pos = Point(float(data[5]), float(data[4]))
                 if data[6]:
                     FL = float(data[6])
                     alt_uncorrected = FL * 30.48  # m, no QNH correction
-                elif data[7]:  # should be "1"
+                elif data[7]:  # ground boolean
                     alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
                     FL = 20
-                if FL is not None and FL < 130:  # FL130
-                    pos = Point(lon, lat)
+                current_aircraft.set_new_pos(self.epoch_now, pos.x, pos.y, alt_uncorrected)
+            # get a new line if now position information (we already checked for any other kind of valuable info)
+            else:
+                continue
 
-            # detect waypoints, compute only every time_between_waypoint for efficiency
-            if pos:
-                line = None
-                if self.epoch_now - current_aircraft.last_waypoint_check > time_between_waypoint:
-                    prev120_300_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 300)
-                    if prev120_300_pos:
-                        line = LineString([pos, (prev120_300_pos.lon, prev120_300_pos.lat)])
-                if line:
-                    for waypoint in waypoints_dict.keys():  # TODO this may be heavy processing. Categorize waypoints in rings from airport
-                        if line.crosses(waypoints_dict[waypoint]):
-                            current_flight.set_waypoint(waypoint)
-                    current_aircraft.last_waypoint_check = self.epoch_now
+            # detect waypoints. Efficient manner by makin lines between periodical points
+            line = None
+            if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
+                prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 3600)
+                if prev_tbw_pos:
+                    line = LineString([pos, (prev_tbw_pos.lon, prev_tbw_pos.lat)])
+            if line:
+                for waypoint in waypoints_dict.keys():
+                    if line.crosses(waypoints_dict[waypoint]):
+                        current_flight.set_waypoint(waypoint)
+                current_aircraft.last_waypoint_check = self.epoch_now
 
-            if pos and TMA.contains(pos):
-
+            # evaluate further only if below FL 130 and within TMA
+            if pos and FL and alt_uncorrected and FL < 130 and TMA.contains(pos):
                 NorS = None
                 EorW = None
                 ttrack = None
@@ -132,14 +132,12 @@ class Metrics:
                 vrate = None
                 found_data = False
 
-                current_aircraft.set_new_pos(self.epoch_now, lat, lon, alt_uncorrected)
-                # prev20_5_pos = current_aircraft.get_position_delimited(self.epoch_now, 5, 20)
                 prev_vel = current_aircraft.get_velocity_delimited(self.epoch_now, 0, 20)
                 if prev_vel is not None:
                     vrate = prev_vel.vrate  # fpm
                     gs = prev_vel.gs  # knots
                     if gs == 0:
-                        continue
+                        continue  # TODO what is this
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
