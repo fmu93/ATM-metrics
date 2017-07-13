@@ -1,5 +1,5 @@
 from p_tools import icao_database, time_string, sortedDictKeys
-from geo_resources import runway_ths_dict
+from geo_resources import runway_ths_dict, all_wyp_seq
 from geopy.distance import great_circle
 
 use_alt_ths_timestamp = False
@@ -77,9 +77,10 @@ class Aircraft:
         self.current_kolls = kolls
         self.last_kolls = epoch
 
-    def get_current_diff(self):
+    def get_current_diff(self, epoch):
         current_diff = 0
-        if self.current_kolls is not None:
+        # return None if last time of koll was longer than 30 min ago TODO
+        if self.current_kolls and epoch - self.last_kolls < 1800:
             current_diff = float(30 * (1013 - self.current_kolls))
         return current_diff
 
@@ -87,24 +88,25 @@ class Aircraft:
         # some icao sending positions may be a ground vehicle
         if self.not_an_aircraft and alt > airport_altitude + 100:
             self.not_an_aircraft = False
-        for key in sorted(self.pos_buffer_dict):
+        for key in sortedDictKeys(self.pos_buffer_dict):
             if len(self.pos_buffer_dict.keys()) > self.min_buffer_items and epoch - key > self.buffer_time:
                 self.pos_buffer_dict.pop(key, None)  # remove key for old position
         self.pos_buffer_dict[epoch] = Position(lon, lat, alt, epoch)
 
     def get_position_delimited(self, epoch, min_bound, max_bound):
-        for key in sorted(self.pos_buffer_dict, reverse=True):
+        # reversed so we start from the greatest epoch key, the most recent position
+        for key in sorted(self.pos_buffer_dict.keys(), reverse=True):
             if min_bound <= epoch - key <= max_bound:
                 return self.pos_buffer_dict[key]
 
     def set_new_vel(self, epoch, vrate, gs, ttrack):
-        for key in sorted(self.vel_buffer_dict):
+        for key in sortedDictKeys(self.vel_buffer_dict):
             if len(self.pos_buffer_dict.keys()) > self.min_buffer_items and epoch - key > self.buffer_time:
                 self.vel_buffer_dict.pop(key, None)  # remove key for old entry
         self.vel_buffer_dict[epoch] = Velocity(epoch, vrate, gs, ttrack)
 
     def get_velocity_delimited(self, epoch, min_bound, max_bound):
-        for key in sorted(self.vel_buffer_dict, reverse=True):
+        for key in sorted(self.vel_buffer_dict.keys(), reverse=True):
             if min_bound <= epoch - key <= max_bound:
                 return self.vel_buffer_dict[key]
 
@@ -132,6 +134,8 @@ class Flight:
         self.operations = []  # [Operation()]
         self.waypoints = []  # ['waypoint_name', ...]
         self.has_missed_app = False
+        self.sid_star = ''
+        self.last_sid_star_check = None
 
     def __lt__(self, other):
         return self.last_seen < other.last_seen  # to be able to sort
@@ -158,7 +162,6 @@ class Flight:
         return
 
     def get_operations(self, epoch_now):
-
         operation_list = []  # Operation
         if self.aircraft.not_an_aircraft:
             return operation_list
@@ -189,6 +192,13 @@ class Flight:
     def set_waypoint(self, waypoint):
         if waypoint not in self.waypoints:
             self.waypoints.append(waypoint)
+
+    def get_sid_star(self, epoch):
+        # only from first operation makes sense
+        for wyp_seq in all_wyp_seq:
+            if wyp_seq.check_runway(self.operations[0].op_runway) and wyp_seq.check_seq(self.waypoints):
+                self.sid_star = wyp_seq.name
+        self.last_sid_star_check = epoch
 
 
 class Operation:
@@ -221,7 +231,7 @@ class Operation:
         self.miss_inclin_ths = 1
         self.possible_miss_time = None
         self.miss_guess_count = 0
-        self.miss_guess_min = 5
+        self.miss_guess_min = 10
 
     def __lt__(self, other):
         return self.get_op_timestamp() < other.get_op_timestamp()  # to be able to sort
@@ -525,13 +535,13 @@ class MissedApproach:
         self.timestamp = missed_time
         self.runway = self.operation.op_runway
         self.position = self.operation.flight.aircraft.get_position_delimited(self.timestamp, 0, 20)
-        self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff()
+        self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff(epoch)  # TODO integrate generic diff
         self.dist_to_ths = None
         for runway_ths_key in runway_ths_dict.keys():
             if self.runway in runway_ths_key:
                 self.dist_to_ths = great_circle((self.position.lon, self.position.lat),
                                                 (runway_ths_dict[runway_ths_key].x, runway_ths_dict[runway_ths_key].y)).nautical
                 break
-        self.operation.miss_comment = '(missed @ ' + '{:1.0f}'.format(self.alt*100) + ' ft, ' +\
+        self.operation.miss_comment = '(missed @ ' + time_string(self.timestamp) + ', ' + '{:1.0f}'.format(self.alt/0.3048) + ' ft, ' +\
                                       '{:1.2f}'.format(self.dist_to_ths) + ' nm from ths) '
 

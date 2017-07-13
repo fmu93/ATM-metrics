@@ -118,6 +118,8 @@ class OperationRefreshThread(threading.Thread):
                                     #     # TODO make sure operations are properly computed... if one validation makes one op but then it/
                                     #     # was another one, both remain instead of overwritting
                                         self.operation_dict[operation] = operation
+                            # TODO check for sid_star here
+
             if not self.core.is_light_run:
                 self.display()
 
@@ -229,14 +231,14 @@ class Core:  # TODO does this have to be a class??
         print 'logs saved'
         self.controller.print_console('logs saved')
 
-    def event_loop(self):  # TODO this sucks...
-        while True:
-            try:
-                f, args, kwargs = self.q.get()
-                f(*args, **kwargs)
-                self.q.task_done()
-            except:
-                pass
+    # def event_loop(self):  # TODO this sucks...
+    #     while True:
+    #         try:
+    #             f, args, kwargs = self.q.get()
+    #             f(*args, **kwargs)
+    #             self.q.task_done()
+    #         except:
+    #             pass
 
 
 # core Class

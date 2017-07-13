@@ -2,526 +2,740 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>waypoints.kml</name>
-	<StyleMap id="msn_ylw-pushpin">
+	<StyleMap id="m_ylw-pushpin">
 		<Pair>
 			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin</styleUrl>
+			<styleUrl>#s_ylw-pushpin</styleUrl>
 		</Pair>
 		<Pair>
 			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin</styleUrl>
+			<styleUrl>#s_ylw-pushpin_hl</styleUrl>
 		</Pair>
 	</StyleMap>
-	<Style id="sh_ylw-pushpin">
+	<Style id="s_ylw-pushpin_hl0">
 		<IconStyle>
-			<scale>1.3</scale>
+			<scale>0.945456</scale>
 			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+				<href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href>
 			</Icon>
-			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
-		<LineStyle>
-			<width>2</width>
-		</LineStyle>
-		<PolyStyle>
-			<fill>0</fill>
-		</PolyStyle>
+		<LabelStyle>
+			<scale>0.7</scale>
+		</LabelStyle>
 	</Style>
-	<Style id="sn_ylw-pushpin">
+	<Style id="s_ylw-pushpin0">
 		<IconStyle>
-			<scale>1.1</scale>
+			<scale>0.8</scale>
 			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+				<href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href>
 			</Icon>
-			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
-		<LineStyle>
-			<width>2</width>
-		</LineStyle>
-		<PolyStyle>
-			<fill>0</fill>
-		</PolyStyle>
+		<LabelStyle>
+			<scale>0.7</scale>
+		</LabelStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl">
+		<IconStyle>
+			<scale>1.18182</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href>
+			</Icon>
+		</IconStyle>
+		<ListStyle>
+		</ListStyle>
+	</Style>
+	<StyleMap id="m_ylw-pushpin3">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin0</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl0</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="s_ylw-pushpin">
+		<IconStyle>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href>
+			</Icon>
+		</IconStyle>
+		<ListStyle>
+		</ListStyle>
 	</Style>
 	<Folder>
 		<name>waypoints</name>
 		<open>1</open>
 		<Placemark>
-			<name>wy_castejon</name>
-			<open>1</open>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.563136999333612,40.3793171462832,0 -2.562958863544982,40.3641045645924,0 -2.544014759668777,40.3555927639474,0 -2.523090744288326,40.3642330959527,0 -2.52329971603757,40.37876656083776,0 -2.544226207087301,40.38744458492862,0 -2.563136999333612,40.3793171462832,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_tobek</name>
+			<LookAt>
+				<longitude>-3.423660352727253</longitude>
+				<latitude>40.19617763950144</latitude>
+				<altitude>0</altitude>
+				<heading>0.0007317833445872563</heading>
+				<tilt>22.5776095448352</tilt>
+				<range>458.2725766408709</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.424458703088162,40.1963535605349,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_perales</name>
-			<open>1</open>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.348813831588431,40.27062732263943,0 -3.37166997141212,40.26304558212465,0 -3.37058381138664,40.24087655177167,0 -3.34580811063572,40.2338310527005,0 -3.324729227124269,40.24208913290122,0 -3.326534532341277,40.26191028366852,0 -3.326312846958635,40.26246812241404,0 -3.326331486956531,40.26302039379397,0 -3.326343921500175,40.26338870521283,0 -3.348813831588431,40.27062732263943,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_castejon</name>
+			<LookAt>
+				<longitude>-2.541070785193347</longitude>
+				<latitude>40.37065989636169</latitude>
+				<altitude>0</altitude>
+				<heading>2.459893991255863</heading>
+				<tilt>25.8046792727978</tilt>
+				<range>1636.598983624422</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.544614412480962,40.37195239303932,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_navas</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.250733589569046,40.393740903314,0 -4.278523966643132,40.38092513465999,0 -4.278042111306241,40.35539809405965,0 -4.248972287573335,40.34360458279951,0 -4.216301813879291,40.35741495534874,0 -4.217109176351478,40.38259948778615,0 -4.250733589569046,40.393740903314,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_perales</name>
+			<LookAt>
+				<longitude>-3.348199598821062</longitude>
+				<latitude>40.25222920534815</latitude>
+				<altitude>0</altitude>
+				<heading>6.309886529782061e-010</heading>
+				<tilt>44.99973706409134</tilt>
+				<range>5808.303867501171</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.348199598821062,40.25222920534814,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_villatobas</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.518730590981788,39.75533090534247,0 -3.469085354791179,39.73480431377217,0 -3.416935035002442,39.75620921277363,0 -3.417202760668308,39.79811577896341,0 -3.470861372296961,39.82126659068902,0 -3.520266533698361,39.79595749760088,0 -3.518730590981788,39.75533090534247,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_navas</name>
+			<LookAt>
+				<longitude>-4.24741289107009</longitude>
+				<latitude>40.36867277039545</latitude>
+				<altitude>0</altitude>
+				<heading>-1.139580020149652e-009</heading>
+				<tilt>44.99973707375338</tilt>
+				<range>7913.845231880268</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.24741289107009,40.36867277039545,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_robledillo</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.249217978105667,40.87545682681789,0 -3.274602585122206,40.86330056221291,0 -3.273294589392149,40.84002770483711,0 -3.245380432082802,40.83007768057355,0 -3.219956854313258,40.84205666307085,0 -3.221101593393726,40.86549483315827,0 -3.249217978105667,40.87545682681789,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_villatobas</name>
+			<LookAt>
+				<longitude>-3.468600783376485</longitude>
+				<latitude>39.77803567865976</latitude>
+				<altitude>0</altitude>
+				<heading>1.37242723567159e-009</heading>
+				<tilt>44.999737272876</tilt>
+				<range>13646.8829240652</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.468600783376485,39.77803567865976,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_somosierra</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.609127444252724,41.17284800516495,0 -3.631638541226211,41.1612812104129,0 -3.63113289153826,41.14110055518285,0 -3.60624549135164,41.13234587302592,0 -3.584714662416244,41.14313076422659,0 -3.584674912653653,41.16201277358594,0 -3.609127444252724,41.17284800516495,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_robledillo</name>
+			<LookAt>
+				<longitude>-3.247279719582066</longitude>
+				<latitude>40.85276726703057</latitude>
+				<altitude>0</altitude>
+				<heading>1.912117668949051e-010</heading>
+				<tilt>44.99973705974723</tilt>
+				<range>7163.00562285285</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.247279719582066,40.85276726703057,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_colmenar_viejo</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.736221277296881,40.65568053289537,0 -3.748195201007152,40.65042768093677,0 -3.747489980460212,40.64011081673199,0 -3.735885941373771,40.63528638371297,0 -3.722864927456549,40.64014341573368,0 -3.722494626197594,40.65019277895087,0 -3.736221277296881,40.65568053289537,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_somosierra</name>
+			<LookAt>
+				<longitude>-3.608156727388932</longitude>
+				<latitude>41.15259697187945</latitude>
+				<altitude>0</altitude>
+				<heading>-6.330707235865592e-010</heading>
+				<tilt>44.99973707919956</tilt>
+				<range>6393.253136135751</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.608156727388932,41.15259697187945,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_toledo</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.365510284633337,39.98094135157285,0 -4.365497302400138,39.95540447498193,0 -4.33643935421241,39.94337915073681,0 -4.309047747070888,39.95503371213896,0 -4.308594245409885,39.98021122983236,0 -4.337185033041134,39.99299079593439,0 -4.365510284633337,39.98094135157285,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_colmenar_viejo</name>
+			<LookAt>
+				<longitude>-3.735344913460551</longitude>
+				<latitude>40.64548345894773</latitude>
+				<altitude>0</altitude>
+				<heading>1.996143947939966e-010</heading>
+				<tilt>44.99973704705392</tilt>
+				<range>3219.32048156443</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.735344913460551,40.64548345894773,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_salamanca</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-5.478438672612001,41.02446379229099,0 -5.478433666051935,41.00684906940568,0 -5.455947953307287,40.99930298923045,0 -5.432935854047841,41.00714006631682,0 -5.433108436479447,41.02527452709661,0 -5.457005844045776,41.03379729906028,0 -5.478438672612001,41.02446379229099,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_toledo</name>
+			<LookAt>
+				<longitude>-4.337052264596826</longitude>
+				<latitude>39.96818237588879</latitude>
+				<altitude>0</altitude>
+				<heading>5.988940732568932e-010</heading>
+				<tilt>44.99973444854376</tilt>
+				<range>7830.621288666067</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.337052264596826,39.96818237588879,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_zamora</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-5.65442173648994,41.53566524585472,0 -5.6542276073972,41.52295326733275,0 -5.638901379400036,41.5173774350083,0 -5.621584151164434,41.52259020116355,0 -5.621351898242789,41.5358055406892,0 -5.639775330012014,41.54205704975031,0 -5.65442173648994,41.53566524585472,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_salamanca</name>
+			<LookAt>
+				<longitude>-5.455687263447048</longitude>
+				<latitude>41.01655018875737</latitude>
+				<altitude>0</altitude>
+				<heading>-1.648875085044371e-010</heading>
+				<tilt>44.99973709102944</tilt>
+				<range>5444.966293511568</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-5.455687263447048,41.01655018875736,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_orbis</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.195887164499467,41.28981725834417,0 -4.229609175367068,41.2756956034241,0 -4.228124300531139,41.24979906006299,0 -4.193860982454133,41.23930569445844,0 -4.163249431640367,41.25105973933569,0 -4.162948656245627,41.27815525706449,0 -4.195887164499467,41.28981725834417,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_zamora</name>
+			<LookAt>
+				<longitude>-5.637308404560399</longitude>
+				<latitude>41.52763834511626</latitude>
+				<altitude>0</altitude>
+				<heading>-1.720092715512549</heading>
+				<tilt>18.60046541659936</tilt>
+				<range>1494.329843299953</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-5.639723824332643,41.53013523503086,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_avila</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.54959548733212,40.63995581254615,0 -4.56883437498956,40.63209500854261,0 -4.568496167098068,40.61547421649774,0 -4.549656262144363,40.60734295366716,0 -4.529512712452738,40.61562211083924,0 -4.529857487423062,40.63240229268044,0 -4.54959548733212,40.63995581254615,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_orbis</name>
+			<LookAt>
+				<longitude>-4.196278916151956</longitude>
+				<latitude>41.26454809261555</latitude>
+				<altitude>0</altitude>
+				<heading>-4.874935552612928e-010</heading>
+				<tilt>44.99972366046178</tilt>
+				<range>7970.963520935497</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.196278916151956,41.26454809261555,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_moral</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.542623661142862,39.01678648130008,0 -3.561591786232495,39.00823786369347,0 -3.561579162417302,38.99120615059167,0 -3.541968991630581,38.98196990618975,0 -3.521457303587663,38.99099512067394,0 -3.521543994304248,39.00801903403341,0 -3.542623661142862,39.01678648130008,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_avila</name>
+			<LookAt>
+				<longitude>-4.549173543641272</longitude>
+				<latitude>40.62362182455705</latitude>
+				<altitude>0</altitude>
+				<heading>1.129375210454176e-010</heading>
+				<tilt>44.99970948340745</tilt>
+				<range>5143.650378466741</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.549173543641273,40.62362182455705,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_sotuk</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.760501244284238,39.19916292660929,0 -4.76009137600637,39.18744367478107,0 -4.745849314043794,39.18137494713601,0 -4.731352487892053,39.18737349560129,0 -4.731744557537753,39.1997745428065,0 -4.746958734666983,39.20545399246363,0 -4.760501244284238,39.19916292660929,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_moral</name>
+			<LookAt>
+				<longitude>-3.541524545053429</longitude>
+				<latitude>38.99937892927791</latitude>
+				<altitude>0</altitude>
+				<heading>-2.010587641887162e-010</heading>
+				<tilt>44.99973778206208</tilt>
+				<range>5495.944764659949</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.541524545053429,38.99937892927791,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_ridav</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-5.808840747770732,40.54662245972628,0 -5.823137714536023,40.54077128509541,0 -5.82304057471003,40.52907049764387,0 -5.808674853006267,40.5229600699526,0 -5.792758229582216,40.52913874018034,0 -5.792866331493618,40.54041220409624,0 -5.808840747770732,40.54662245972628,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_sotuk</name>
+			<LookAt>
+				<longitude>-4.74592686461333</longitude>
+				<latitude>39.19334276824655</latitude>
+				<altitude>0</altitude>
+				<heading>2.075046353339043e-009</heading>
+				<tilt>44.99966533327071</tilt>
+				<range>3789.682952032532</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.745926866959374,39.19341448465521,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_erema</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.157619970994277,41.08900291169307,0 -4.157498930809792,41.07433836331213,0 -4.138987965342777,41.06636308920096,0 -4.120189075587869,41.07392624684429,0 -4.120054745417901,41.08894751767726,0 -4.139614975647273,41.09743604895115,0 -4.157619970994277,41.08900291169307,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_ridav</name>
+			<LookAt>
+				<longitude>-5.807947973245035</longitude>
+				<latitude>40.53446591817413</latitude>
+				<altitude>38.11464566914063</altitude>
+				<heading>-1.672236259179721e-009</heading>
+				<tilt>44.99941164717262</tilt>
+				<range>3683.83004729541</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-5.807947973245035,40.53446591817413,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_tabanera</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.124225924225936,42.03469501442111,0 -4.124030779366295,42.02118288157749,0 -4.108695578112602,42.01475480209562,0 -4.092161131033275,42.02139226613605,0 -4.092295802449494,42.03483872974335,0 -4.109288207805451,42.04089366881101,0 -4.124225924225936,42.03469501442111,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_erema</name>
+			<LookAt>
+				<longitude>-4.138837357753137</longitude>
+				<latitude>41.08185137974179</latitude>
+				<altitude>0</altitude>
+				<heading>6.38879211573582e-010</heading>
+				<tilt>44.99968884928902</tilt>
+				<range>4897.364565668864</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.138837357753137,41.08185137974179,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_lalpi</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.703939575220785,40.97283676642654,0 -3.719046360480128,40.96601018559117,0 -3.717898141667239,40.95265190741437,0 -3.703205766850137,40.94651150848259,0 -3.687555525904311,40.95174619576287,0 -3.68594280001365,40.96646890810344,0 -3.703939575220785,40.97283676642654,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_tabanera</name>
+			<LookAt>
+				<longitude>-4.108193528088409</longitude>
+				<latitude>42.02782433214126</latitude>
+				<altitude>0</altitude>
+				<heading>-6.476301102102938e-010</heading>
+				<tilt>44.99973714311383</tilt>
+				<range>4126.121592165429</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.108193528088409,42.02782433214126,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_resbi</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.206613142503096,40.74370143095086,0 -4.205637962041914,40.72755549556788,0 -4.18757245348131,40.71992790235557,0 -4.165497005874493,40.72784573108093,0 -4.165718237487413,40.74379767372832,0 -4.187698169399815,40.75079228406669,0 -4.206613142503096,40.74370143095086,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_lalpi</name>
+			<LookAt>
+				<longitude>-3.702494614381504</longitude>
+				<latitude>40.95951084155842</latitude>
+				<altitude>0</altitude>
+				<heading>6.519504961757268e-010</heading>
+				<tilt>44.9995736330822</tilt>
+				<range>4136.906246578536</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.702494614381504,40.95951084155842,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_burex</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.960245632125753,39.81882589699226,0 -3.959990446661703,39.80157833226181,0 -3.939027051802833,39.79268979751389,0 -3.915717803613437,39.8014599942979,0 -3.915366264148709,39.81819376257248,0 -3.939581304320705,39.82854085870084,0 -3.960245632125753,39.81882589699226,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_resbi</name>
+			<LookAt>
+				<longitude>-4.186055073826225</longitude>
+				<latitude>40.73530749771676</latitude>
+				<altitude>0</altitude>
+				<heading>5.116681562564266e-010</heading>
+				<tilt>44.99968444241698</tilt>
+				<range>4863.72465101914</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.186055073826225,40.73530749771676,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_nasos</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.028370026933897,39.41316853020533,0 -3.044192230583599,39.40580231186846,0 -3.043879017052857,39.39115215807433,0 -3.027252782733782,39.38464551997862,0 -3.008570808503925,39.39249343473043,0 -3.009061593218194,39.40638998213831,0 -3.028370026933897,39.41316853020533,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_burex</name>
+			<LookAt>
+				<longitude>-3.937805986949324</longitude>
+				<latitude>39.81049525914602</latitude>
+				<altitude>0</altitude>
+				<heading>-2.878392842629773e-009</heading>
+				<tilt>44.99961682115731</tilt>
+				<range>5648.762142212702</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.937805986949324,39.81049525914602,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_sirgu</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.618582551234746,40.2687671007924,0 -2.618959344347976,40.25318889753291,0 -2.600509194977529,40.24471475824605,0 -2.578692246853362,40.25340777679288,0 -2.578460494653732,40.26907329372572,0 -2.600818927530255,40.27644567130994,0 -2.618582551234746,40.2687671007924,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_nasos</name>
+			<LookAt>
+				<longitude>-3.026381519367238</longitude>
+				<latitude>39.39890958385787</latitude>
+				<altitude>0</altitude>
+				<heading>2.495940286278494e-010</heading>
+				<tilt>44.9997396055896</tilt>
+				<range>4502.837589069414</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.026381519367238,39.39890958385786,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_prado</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.028202764947589,40.15291308373257,0 -2.028311715720622,40.1407460897812,0 -2.010573538339769,40.13248501899398,0 -1.99265449225871,40.14013146352347,0 -1.992830732985792,40.15279630337528,0 -2.011039156345471,40.16081658345782,0 -2.028202764947589,40.15291308373257,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_sirgu</name>
+			<LookAt>
+				<longitude>-2.598709945412622</longitude>
+				<latitude>40.26044483690991</latitude>
+				<altitude>0</altitude>
+				<heading>1.389105269282515e-009</heading>
+				<tilt>44.99960170090144</tilt>
+				<range>4992.630483797459</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.598709946287961,40.26057979711585,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_aduxo</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.085336293116904,40.52062881121044,0 -2.084464907867617,40.50365413579775,0 -2.064193254039513,40.49442850599007,0 -2.041696393490625,40.50277691410511,0 -2.041828312111302,40.5210270837948,0 -2.064124111000469,40.52898708079017,0 -2.085336293116904,40.52062881121044,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_prado</name>
+			<LookAt>
+				<longitude>-2.010483103746116</longitude>
+				<latitude>40.14665080231027</latitude>
+				<altitude>0</altitude>
+				<heading>3.427809014553814e-010</heading>
+				<tilt>44.99973704749478</tilt>
+				<range>4472.217897954738</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.010483103746116,40.14665080231027,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_tersa</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.152007763310024,40.73130129667717,0 -2.152144139866552,40.71984374477878,0 -2.137768584188494,40.7127022356516,0 -2.121597123569346,40.71964473181072,0 -2.121249002730471,40.73106338532398,0 -2.137767773569203,40.73729768437666,0 -2.152007763310024,40.73130129667717,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_aduxo</name>
+			<LookAt>
+				<longitude>-2.063516159422949</longitude>
+				<latitude>40.51170714801455</latitude>
+				<altitude>0</altitude>
+				<heading>2.820450292581542e-010</heading>
+				<tilt>44.99973766583654</tilt>
+				<range>5481.762354815245</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.063516159422949,40.51170714801455,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_nosko</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.836442091554039,40.66418207323386,0 -2.835949156525034,40.6468246049466,0 -2.816631003102212,40.63964708653928,0 -2.794795927505402,40.64684607463923,0 -2.794708229898486,40.66436394979807,0 -2.816956769093715,40.67252378402985,0 -2.836442091554039,40.66418207323386,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_tersa</name>
+			<LookAt>
+				<longitude>-2.136696572044</longitude>
+				<latitude>40.72500013346991</latitude>
+				<altitude>0</altitude>
+				<heading>-1.051574867252227e-009</heading>
+				<tilt>44.99973721989408</tilt>
+				<range>3882.52579931853</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.136696572044,40.72500013346992,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_pinar</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.618695078267158,40.98707956151984,0 -2.618236209209647,40.97130508730432,0 -2.599444160715677,40.96386956611228,0 -2.577229785578221,40.97140010819786,0 -2.577558056016194,40.98711491898577,0 -2.599701319288303,40.99594755993526,0 -2.618695078267158,40.98707956151984,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_nosko</name>
+			<LookAt>
+				<longitude>-2.815574694345059</longitude>
+				<latitude>40.65606298647821</latitude>
+				<altitude>0</altitude>
+				<heading>1.119542128087097e-009</heading>
+				<tilt>44.99971454670854</tilt>
+				<range>5202.505319569259</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.815574694345059,40.65606298647821,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_barahona</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.646905271322423,41.33053303154306,0 -2.647562025513394,41.31603815300408,0 -2.63032291955395,41.30811519023585,0 -2.610707968050447,41.31588215848026,0 -2.610386388606403,41.33084785638346,0 -2.630109826975727,41.33759596800643,0 -2.646905271322423,41.33053303154306,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_pinar</name>
+			<LookAt>
+				<longitude>-2.597962431917119</longitude>
+				<latitude>40.9796755906461</latitude>
+				<altitude>0</altitude>
+				<heading>7.975042079102176e-012</heading>
+				<tilt>44.99950403638675</tilt>
+				<range>5026.885580693443</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.597962431917119,40.97967559064611,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_tagom</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-3.452370061857191,40.99224458195774,0 -3.453337455024224,40.97550642064253,0 -3.431664776944068,40.96648127511256,0 -3.410205519572438,40.9753192559845,0 -3.410425830265736,40.99170032248022,0 -3.432280547684026,41.00105270978278,0 -3.452370061857191,40.99224458195774,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_barahona</name>
+			<LookAt>
+				<longitude>-2.628867788950378</longitude>
+				<latitude>41.32518462097922</latitude>
+				<altitude>0</altitude>
+				<heading>1.106571980392755e-005</heading>
+				<tilt>36.5010080574498</tilt>
+				<range>1361.256329719431</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.629837026576827,41.32355596538795,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_obiki</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.876814229905386,41.23417449986481,0 -2.87672634132838,41.22095208665005,0 -2.859309727129639,41.21297109917447,0 -2.840723625849972,41.2207896418041,0 -2.841354454799588,41.23474499681629,0 -2.859951384125226,41.24090200226767,0 -2.876814229905386,41.23417449986481,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_tagom</name>
+			<LookAt>
+				<longitude>-3.431771486829486</longitude>
+				<latitude>40.98376702071676</latitude>
+				<altitude>0</altitude>
+				<heading>6.621561010098729e-010</heading>
+				<tilt>44.99973707468391</tilt>
+				<range>5457.137020262569</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.431771486829486,40.98376702071676,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_bardi</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-6.320244977817718,40.59080140828826,0 -6.320118073462943,40.57758290021438,0 -6.301932595183421,40.56901217439936,0 -6.283188138344718,40.57737385511136,0 -6.283241160757457,40.59148137499799,0 -6.302708628030524,40.59776946965192,0 -6.320244977817718,40.59080140828826,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_obiki</name>
+			<LookAt>
+				<longitude>-2.858768928274371</longitude>
+				<latitude>41.22683961741948</latitude>
+				<altitude>0</altitude>
+				<heading>-5.598070440683825e-010</heading>
+				<tilt>44.99964009744519</tilt>
+				<range>4393.721329790926</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.858768928274371,41.22683961741948,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_caceres</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-6.435465062332205,39.53706625340782,0 -6.449328255549585,39.53013370833364,0 -6.449344570398846,39.51851536009839,0 -6.434458731098212,39.51159825108193,0 -6.418400674292194,39.51926215537363,0 -6.417919018361734,39.53048649584719,0 -6.435465062332205,39.53706625340782,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_bardi</name>
+			<LookAt>
+				<longitude>-6.301716548418772</longitude>
+				<latitude>40.5833975564253</latitude>
+				<altitude>0</altitude>
+				<heading>-1.001543946974136e-009</heading>
+				<tilt>44.9997437799603</tilt>
+				<range>4542.835837280689</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-6.301716548418773,40.5833975564253,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_longa</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-4.87632153043064,40.45239259819815,0 -4.894325328722719,40.44525972547177,0 -4.895535986751666,40.43034645332875,0 -4.877038003469737,40.42257293707579,0 -4.856304359959134,40.42951389141906,0 -4.857821045491839,40.44597577081252,0 -4.87632153043064,40.45239259819815,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_caceres</name>
+			<LookAt>
+				<longitude>-6.433359896875839</longitude>
+				<latitude>39.52401071960363</latitude>
+				<altitude>0</altitude>
+				<heading>0.0001809103272317446</heading>
+				<tilt>37.73342262711611</tilt>
+				<range>821.2004867159855</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-6.434753702025255,39.52442147450984,0</coordinates>
+			</Point>
 		</Placemark>
 		<Placemark>
-			<name>wy_nando</name>
-			<styleUrl>#msn_ylw-pushpin</styleUrl>
-			<Polygon>
-				<tessellate>1</tessellate>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-2.174557667843308,40.002523632289,0 -2.191080835633972,39.99589643334526,0 -2.191598214716798,39.9822049120984,0 -2.175344515552896,39.97417789482719,0 -2.156199549873591,39.9816306313107,0 -2.156102064128814,39.99556583332215,0 -2.174557667843308,40.002523632289,0 
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>wyp_longa</name>
+			<LookAt>
+				<longitude>-4.875920227524214</longitude>
+				<latitude>40.43642765086234</latitude>
+				<altitude>139.9082520059476</altitude>
+				<heading>-3.738998460281556e-009</heading>
+				<tilt>44.998681548849</tilt>
+				<range>4546.550970391428</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-4.875920227524214,40.43642765086234,0</coordinates>
+			</Point>
+		</Placemark>
+		<Placemark>
+			<name>wyp_nando</name>
+			<LookAt>
+				<longitude>-2.173850139258777</longitude>
+				<latitude>39.98835079035915</latitude>
+				<altitude>0</altitude>
+				<heading>2.310229686274515e-010</heading>
+				<tilt>44.99973707321561</tilt>
+				<range>4474.459351711235</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.173850139258777,39.98835079035915,0</coordinates>
+			</Point>
+		</Placemark>
+		<Placemark>
+			<name>wyp_villa</name>
+			<LookAt>
+				<longitude>-2.410555600309071</longitude>
+				<latitude>40.23305560009229</latitude>
+				<altitude>0</altitude>
+				<heading>-1.992907733551577e-010</heading>
+				<tilt>0</tilt>
+				<range>1000.000177416105</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-2.410555600309071,40.23305560009229,0</coordinates>
+			</Point>
+		</Placemark>
+		<Placemark>
+			<name>wyp_ssy</name>
+			<LookAt>
+				<gx:TimeSpan>
+					<begin>2016-09-01T23:54:29.157053649Z</begin>
+					<end>2016-09-02T16:10:48.157053649Z</end>
+				</gx:TimeSpan>
+				<longitude>-3.57527780000338</longitude>
+				<latitude>40.5463889001404</latitude>
+				<altitude>0</altitude>
+				<heading>-1.868178306024633e-012</heading>
+				<tilt>0</tilt>
+				<range>999.9999973579169</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.57527780000338,40.5463889001404,0</coordinates>
+			</Point>
+		</Placemark>
+		<Placemark>
+			<name>wyp_bra</name>
+			<LookAt>
+				<gx:TimeSpan>
+					<begin>2016-09-01T23:54:29.157053649Z</begin>
+					<end>2016-09-02T16:10:48.157053649Z</end>
+				</gx:TimeSpan>
+				<longitude>-3.557975721572829</longitude>
+				<latitude>40.46916806429956</latitude>
+				<altitude>0</altitude>
+				<heading>-0.0002482501460979483</heading>
+				<tilt>24.39141524099025</tilt>
+				<range>212.6100423776804</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin3</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.557727993159347,40.46913850821589,0</coordinates>
+			</Point>
+		</Placemark>
+		<Placemark>
+			<name>wyp_asbin</name>
+			<LookAt>
+				<longitude>-3.176388899804693</longitude>
+				<latitude>40.25499999986673</latitude>
+				<altitude>0</altitude>
+				<heading>1.263459444437974e-010</heading>
+				<tilt>0</tilt>
+				<range>999.9999979940371</range>
+				<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+			</LookAt>
+			<styleUrl>#m_ylw-pushpin</styleUrl>
+			<Point>
+				<gx:drawOrder>1</gx:drawOrder>
+				<coordinates>-3.176388899804693,40.25499999986673,0</coordinates>
+			</Point>
 		</Placemark>
 	</Folder>
 </Document>

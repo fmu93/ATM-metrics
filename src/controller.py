@@ -9,7 +9,7 @@ import numpy as np
 import threading
 
 flight_headers = ['call', 'icao', 'type', 'operator', 'opTimestamp','opTimestampDate','#pos','V(fpm)','GS(kts)','(deg)',
-                  'track','runway', 'L/T', 'change_comm','miss_comm','op_comm', 'waypoints']
+                  'track','runway', 'L/TO', 'change_comm','miss_comm','op_comm', 'waypoints']
 config_headers = ['From time', 'Until time', 'Duration', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
                   'missed', 'Slack (min)']
 comboBox_config_options = ['N&S', 'N', 'S']
@@ -162,10 +162,11 @@ class Controller:
         self.print_console("process state label changed: " + string)
 
     def update_progressbar(self, val):
-        if isinstance(threading.current_thread(), threading._MainThread):
-            self.ui.progressBar.setValue(val)
-        else:
-            self.core.q.put((self.update_progressbar, (val,), {}))  # send the answer to the main thread's queue
+        self.ui.progressBar.setValue(val)  # TODO run gui only from main thread
+        # if isinstance(threading.current_thread(), threading._MainThread):
+        #     self.ui.progressBar.setValue(val)
+        # else:
+        #     self.core.q.put((self.update_progressbar, (val,), {}))  # send the answer to the main thread's queue
 
     def update_histo(self):
         self.histo.update_figure()
@@ -202,8 +203,8 @@ class Controller:
         if self.ui.lineEdit_alt_ths.isModified():
             new_alt_ths = self.ui.lineEdit_alt_ths.text()
             try:
-                aircraft_model.alt_threshold = int(new_alt_ths)
-                self.print_console("new altitude threshold for timestamp: " + str(new_alt_ths) + " m")
+                aircraft_model.alt_threshold = int(new_alt_ths)*0.3048  # input is in feet
+                self.print_console("new altitude threshold for timestamp: " + str(new_alt_ths) + " feet")
             except Exception:
                 self.print_console("[error] new altitude threshold for timestamp: only integers please")
         self.ui.lineEdit_alt_ths.setModified(False)

@@ -5,7 +5,7 @@ from geo_resources import *
 from shapely.geometry import LineString
 import time
 
-time_between_waypoint = 40  # s
+time_between_waypoint = 60  # s
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
 airport_altitude = 600  # [m]
 
@@ -109,10 +109,10 @@ class Metrics:
             else:
                 continue
 
-            # detect waypoints. Efficient manner by makin lines between periodical points
+            # detect waypoints. Efficient manner by making lines between periodical points TODO make more eff
             line = None
             if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
-                prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 3600)
+                prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 360)
                 if prev_tbw_pos:
                     line = LineString([pos, (prev_tbw_pos.lon, prev_tbw_pos.lat)])
             if line:
@@ -122,28 +122,20 @@ class Metrics:
                 current_aircraft.last_waypoint_check = self.epoch_now
 
             # evaluate further only if below FL 130 and within TMA
-            if pos and FL and alt_uncorrected and FL < 130 and TMA.contains(pos):
+            if pos and FL and alt_uncorrected and FL < 130 and airport_poly.contains(pos):
                 NorS = None
                 EorW = None
-                ttrack = None
-                gs = None
-                inclin = None
                 poly = None
-                vrate = None
-                found_data = False
 
                 prev_vel = current_aircraft.get_velocity_delimited(self.epoch_now, 0, 20)
-                if prev_vel is not None:
+                if prev_vel:
                     vrate = prev_vel.vrate  # fpm
                     gs = prev_vel.gs  # knots
                     if gs == 0:
-                        continue  # TODO what is this
+                        continue  # TODO what is this?
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
-                    found_data = True
-
-                if airport_poly.contains(pos) and found_data:
 
                     # | A1 - | B1
                     # | A0 - | B0
@@ -212,10 +204,12 @@ class Metrics:
 
                             # here we set the alt_ths_operation timestamp
                             if current_aircraft.last_kolls and self.epoch_now - current_aircraft.last_kolls < 900:
-                                current_diff = current_aircraft.get_current_diff()
+                                current_diff = current_aircraft.get_current_diff(self.epoch_now)
+                                # update generic_current_diff only every 10 min
                                 if self.epoch_now - self.last_generic_diff > 600:
                                     self.generic_current_diff = current_diff
                                     self.last_generic_diff = self.epoch_now
+                                    print 'new generic kolls: ', time_string(self.epoch_now), self.generic_current_diff
                             else:
                                 current_diff = self.generic_current_diff
                             alt_corr = alt_uncorrected - current_diff

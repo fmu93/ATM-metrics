@@ -204,18 +204,135 @@ point_WYP_VILLA = Point((-2.41056, 40.23306))
 poly_WYP_VILLA = point_WYP_VILLA.buffer(wyp_radius)
 waypoints_dict['VILLA'] = poly_WYP_VILLA
 
-# SID
+point_WYP_TOBEK = Point((-3.42446, 40.19635))
+poly_WYP_TOBEK = point_WYP_TOBEK.buffer(wyp_radius)
+waypoints_dict['TOBEK'] = poly_WYP_TOBEK
+
+point_WYP_ASBIN = Point((-3.17639, 40.25500))
+poly_WYP_ASBIN = point_WYP_ASBIN.buffer(wyp_radius)
+waypoints_dict['ASBIN'] = poly_WYP_ASBIN
+
+point_WYP_SSY = Point((-3.57528, 40.54639))
+poly_WYP_SSY = point_WYP_SSY.buffer(wyp_radius/2)
+waypoints_dict['SSY'] = poly_WYP_SSY
+
+point_WYP_BRA = Point((-3.55773, 40.46914))  # TODO this is not needed
+poly_WYP_BRA = point_WYP_BRA.buffer(wyp_radius/4)
+waypoints_dict['BRA'] = poly_WYP_BRA
+
+
+# SID TODO SID/STAR
+class WYP_seq:
+    def __init__(self, name, cat, seq):
+        self.name = name
+        self.cat = cat
+        self.seq = seq
+
+    def check_runway(self, op_runway):
+        if op_runway in self.cat:
+            return True
+        else: return False
+
+    def check_seq(self, waypoint_list):
+        if not waypoint_list:  # empty list
+            return False
+        prev_index = -1
+        for waypoint in self.seq:
+            if waypoint in waypoint_list and prev_index < waypoint_list.index(waypoint):
+                prev_index = waypoint_list.index(waypoint)
+            else:
+                return False
+        return True
+
 # 14R diurno
-'BARDI2Q'
-'PINAR2B'
-'VTB1Q'
-'CCS1Q'
-'RBO1B'
-'ZMR1Q'
-'NANDO1B'
-'SIE1Q'
+BARDI2Q = WYP_seq('BARDI2Q', 'SID: 14R', ['NVS', 'BARDI'])
+PINAR2B = WYP_seq('PINAR2B', 'SID: 14R', ['RBO', 'BARDI'])
+VTB1Q = WYP_seq('VTB1Q', 'SID: 14R', ['PDT', 'VTB'])
+CCS1Q = WYP_seq('CCS1Q', 'SID: 14R', ['NVS', 'CSS'])
+RBO1B = WYP_seq('RBO1B', 'SID: 14R', ['RBO'])
+ZMR1Q = WYP_seq('ZMR1Q', 'SID: 14R', ['NVS', 'ZMR'])
+NANDO1B = WYP_seq('NANDO1B', 'SID: 14R', ['PDT', 'NANDO'])
+SIE1Q = WYP_seq('SIE1Q', 'SID: 14R', ['CNR', 'SIE'])
 
+# 14L diurno
+BARDI2V = WYP_seq('BARDI2V', 'SID: 14L', ['NVS', 'BARDI'])
+PINAR1E = WYP_seq('PINAR1E', 'SID: 14L', ['RBO', 'PINAR'])
+VTB1V = WYP_seq('VTB1V', 'SID: 14L', ['PDT', 'VTB'])
+ZMR1V = WYP_seq('ZMR1V', 'SID: 14L', ['NVS', 'ZMR'])
+RBO1E = WYP_seq('RBO1E', 'SID: 14L', ['RBO'])
+CCS2V = WYP_seq('CCS2V', 'SID: 14L', ['NVS', 'CCS'])
+SIE1E = WYP_seq('SIE1E', 'SID: 14L', ['RBO', 'SIE'])
+NANDO1E = WYP_seq('NANDO1E', 'SID: 14L', ['NANDO'])
 
+# 36R diurno
+BARDI5W = WYP_seq('BARDI5W', 'SID: 36R', ['CNR', 'AVILA', 'LONGA', 'BARDI'])
+PINAR1D = WYP_seq('PINAR1D', 'SID: 36R', ['RBO', 'PINAR'])
+VTB1D = WYP_seq('VTB1D', 'SID: 36R', ['PDT', 'VTB'])
+ZMR2W = WYP_seq('ZMR2W', 'SID: 36R', ['SIE', 'ZMR'])
+RBO1D = WYP_seq('RBO1D', 'SID: 36R', ['RBO'])
+CCS4W = WYP_seq('CCS4W', 'SID: 36R', ['CNR', 'AVILA', 'LONGA', 'CSS'])
+SIE2W = WYP_seq('SIE2W', 'SID: 36R', ['SIE'])
+NANDO1D = WYP_seq('NANDO1D', 'SID: 36R', ['PDT', 'NANDO'])
+
+# 36L diurno
+ZMR1T = WYP_seq('ZMR1T', 'SID: 36L', ['SSY', 'SIE', 'ORBIS', 'ZMR'])
+SIE1T = WYP_seq('SIE1T', 'SID: 36L', ['SSY', 'SIE'])
+NANDO2N = WYP_seq('NANDO2N', 'SID: 36L', ['SSY', 'PDT', 'NANDO'])
+BARDI2K = WYP_seq('BARDI2K', 'SID: 36L', ['SSY', 'AVILA', 'LONGA', "BARDI"])
+VTB1K = WYP_seq('VTB1K', 'SID: 36L', ['SSY', 'CNR', 'BRA', 'VTB'])
+PINAR2N = WYP_seq('PINAR2N', 'SID: 36L', ['SSY', 'RBO', 'PINAR'])
+BARDI2T = WYP_seq('BARDI2T', 'SID: 36L', ['SSY', 'CNR', 'AVILA', 'LONGA', 'BARDI'])
+VTB1T = WYP_seq('VTB1T', 'SID: 36L', ['SSY', 'CNR', 'BRA', 'VTB'])
+RBO1N = WYP_seq('RBO1N', 'SID: 36L', ['SSY', 'RBO'])
+CCS1K = WYP_seq('CCS1K', 'SID: 36L', ['SSY', 'AVILA', 'LONGA', 'CSS'])
+ZMR1K = WYP_seq('SIE1T', 'SID: 36L', ['SSY', 'SIE', 'ORBIS', 'ZMR'])
+SIE1K = WYP_seq('SIE1T', 'SID: 36L', ['SSY', 'SIE'])
+CCS1T = WYP_seq('CCS1T', 'SID: 36L', ['SSY', 'CNR', 'AVILA', 'LONGA', 'CSS'])
+
+# STAR
+# 32L/32R, north config, east
+ADUXO1D = WYP_seq('ADUXO1D', 'STAR: 32L/32R, east', ['ADUXO', 'SIRGU', 'ASBIN', 'PDT'])
+VILLA1D = WYP_seq('VILLA1D', 'STAR: 32L/32R, east', ['VILLA', 'SIRGU', 'ASBIN', 'PDT'])
+BAN4D = WYP_seq('BAN4D', 'STAR: 32L/32R, east', ['BAN', 'PINAR', 'NOSKO', 'ASBIN', 'PDT'])
+NASOS1D = WYP_seq('NASOS1D', 'STAR: 32L/32R, east', ['NASOS', 'SIRGU', 'ASBIN', 'PDT'])
+TERSA2Z = WYP_seq('TERSA2Z', 'STAR: 32L/32R, east', ['TERSA', 'NOSKO', 'ASBIN', 'PDT'])
+PRADO1D = WYP_seq('PRADO1D', 'STAR: 32L/32R, east', ['PRADO', 'SIRGU', 'ASBIN', 'PDT'])
+
+# 32L/32R, north config, west
+ORBIS1C = WYP_seq('ORBIS1C', 'STAR: 32L/32R, west', ['ORBIS', 'NVS', 'TOBEK', 'PDT'])
+SOTUK2C = WYP_seq('SOTUK2C', 'STAR: 32L/32R, west', ['SOTUK', 'BUREX', 'TOBEK', 'PDT'])
+TLD2C = WYP_seq('TLD2C', 'STAR: 32L/32R, west', ['TLD', 'BUREX', 'TOBEK', 'PDT'])
+MORAL4C = WYP_seq('MORAL4C', 'STAR: 32L/32R, west', ['MORAL', 'BUREX', 'TOBEK', 'PDT'])
+RIDAV3C = WYP_seq('RIDAV3C', 'STAR: 32L/32R, west', ['RIDAV', 'TLD', 'BUREX', 'TOBEK', 'PDT'])
+ZMR3C = WYP_seq('ZMR3C', 'STAR: 32L/32R, west', ['ZMR', 'AVILA', 'NVS', 'TOBEK', 'PDT'])
+
+# 18L/18R, south config, east
+ADUXO4B = WYP_seq('ADUXO4B', 'STAR: 18L/18R, east', ['ADUXO', 'NOSKO', 'RBO', 'TAGOM'])
+BAN3B = WYP_seq('BAN3B', 'STAR: 18L/18R, east', ['BAN', 'OBIKI', 'TAGOM'])
+PRADO4E = WYP_seq('PRADO4E', 'STAR: 18L/18R, east', ['PRADO', 'CJN', 'NOSKO', 'RBO', 'TAGOM'])
+TERSA4E = WYP_seq('TERSA4E', 'STAR: 18L/18R, east', ['TERSA', 'NOSKO', 'RBO', 'TAGOM'])
+VILLA4E = WYP_seq('VILLA4E', 'STAR: 18L/18R, east', ['VILLA', 'CJN', 'NOSKO', 'RBO', 'TAGOM'])
+NASOS4A = WYP_seq('NASOS4A', 'STAR: 18L/18R, east', ['NASOS', 'CJN', 'NOSKO', 'RBO', 'TAGOM'])
+
+# 18L/18R, south config, west
+SOTUK5A = WYP_seq('SOTUK5A', 'STAR: 18L/18R, west', ['SOTUK', 'TLD', 'NVS', 'RESBI', 'LALPI'])
+MORAL5A = WYP_seq('MORAL5A', 'STAR: 18L/18R, west', ['MORAL', 'TLD', 'NVS', 'RESBI', 'LALPI'])
+TLD3Z = WYP_seq('TLD3Z', 'STAR: 18L/18R, west', ['TLD', 'NVS', 'RESBI', 'SIE'])
+RIDAV1A = WYP_seq('RIDAV1A', 'STAR: 18L/18R, west', ['RIDAV', 'BBI', 'EREMA', 'LALPI'])
+TLD5A = WYP_seq('TLD5A', 'STAR: 18L/18R, west', ['TLD', 'NVS', 'RESBI', 'LALPI'])
+ORBIS4A = WYP_seq('ORBIS4A', 'STAR: 18L/18R, west', ['ORBIS', 'EREMA', 'LALPI'])
+ORBIS1Z = WYP_seq('ORBIS4A', 'STAR: 18L/18R, west', ['ORBIS', 'SIE'])
+ZMR3A = WYP_seq('ZMR3A', 'STAR: 18L/18R, west', ['ZMR', 'EREMA', 'LALPI'])
+
+# make a list of all SID_STAR
+all_wyp_seq = [BARDI2Q, PINAR2B, VTB1Q, CCS1Q, RBO1B, ZMR1Q, NANDO1B, SIE1Q,
+               BARDI2V, PINAR1E, VTB1V, ZMR1V, RBO1E, CCS2V, SIE1E, NANDO1E,
+               BARDI5W, PINAR1D, VTB1D, ZMR2W, RBO1D, CCS4W, SIE2W, NANDO1D,
+               ZMR1T, SIE1T, NANDO2N, BARDI2K, VTB1K, PINAR2N, BARDI2T, VTB1T, RBO1N, CCS1K, ZMR1K, SIE1K, CCS1T,
+               ADUXO1D, VILLA1D, BAN4D, NASOS1D, TERSA2Z, PRADO1D,
+               ORBIS1C, SOTUK2C, TLD2C, MORAL4C, RIDAV3C, ZMR3C,
+               ADUXO4B, BAN3B, PRADO4E, TERSA4E, VILLA4E, NASOS4A,
+               SOTUK5A, MORAL5A, TLD3Z, RIDAV1A, TLD5A, ORBIS4A, ORBIS1Z, ZMR3A]
 
 # Runways
 
@@ -232,7 +349,7 @@ runway_ths_dict['18R'] = point_18R
 
 # analysis/visualization
 if __name__ == '__main__':
-    figsize = 6,6
+    figsize = 6, 6
     for point in waypoints_dict.keys():
         print point
     pts = gpd.GeoSeries([point for point in waypoints_dict.values()])
