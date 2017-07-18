@@ -4,6 +4,7 @@ from aircraft_model import Aircraft
 from geo_resources import *
 from shapely.geometry import LineString
 import time
+import threading
 
 time_between_waypoint = 60  # s
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
@@ -13,13 +14,15 @@ airport_altitude = 600  # [m]
 class Metrics:
 
     def __init__(self, dataExtractor):
-        self.generic_current_diff = 0.0
-        self.last_generic_diff = 0
         self.dataExtractor = dataExtractor
         self.epoch_now = 0
-        self.evaluate_waypoints = True
+        self.evaluate_waypoints = self.dataExtractor.core.evaluate_waypoints
         self.dead = False
         self.line_count = 0
+        self.is_delimited = self.dataExtractor.core.is_delimited
+        self.analyseStart = self.dataExtractor.core.analyseStart
+        self.analyseEnd = self.dataExtractor.core.analyseEnd
+        self.lock1 = threading.Lock()
 
     def run(self, key_timestamp, infile, icao_filter):
         # Open database
@@ -46,6 +49,13 @@ class Metrics:
             self.epoch_now = float(data[0])
             icao0 = str(data[2])
 
+            # filter time start and end
+            if self.is_delimited:
+                if self.analyseStart and self.epoch_now <= self.analyseStart:
+                    continue
+                if self.analyseEnd and self.epoch_now > self.analyseEnd:
+                    break
+
             if self.epoch_now < prev_epoch:
                 # database going backwards, could be that raw data was already corrupt
                 continue
@@ -57,9 +67,10 @@ class Metrics:
                     print time_string(self.epoch_now) + ' ...'
                     self.dataExtractor.dispTime(time_string(self.epoch_now))
                     print_time = False
-                    # progress bar
-                    self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
-                                                                          self.dataExtractor.num_lines)
+                    # progress bar TODO should be queued for main thread to process or might hang
+                    # with self.lock1:
+                    #     self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
+                    #                                                           self.dataExtractor.num_lines)
             else:
                 print_time = True
 

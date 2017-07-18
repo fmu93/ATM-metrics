@@ -6,7 +6,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy as np
-import threading
+from matplotlib.pyplot import xticks
+from p_tools import time_string
+import time
 
 flight_headers = ['call', 'icao', 'type', 'operator', 'opTimestamp','opTimestampDate','#pos','V(fpm)','GS(kts)','(deg)',
                   'track','runway', 'L/TO', 'change_comm','miss_comm','op_comm', 'SID/STAR']
@@ -46,21 +48,27 @@ class Controller:
         self.ui.btnPause.clicked.connect(self.core.pause)
         self.ui.btnLightRun.clicked.connect(self.core.light_run)
         self.ui.checkBox_plotOff.stateChanged.connect(self.state_plot_off)
-        self.ui.checkBox_stacked.stateChanged.connect(self.state_stacked)
-        self.ui.checkBox_scrollable.stateChanged.connect(self.state_scrollable)
+        # self.ui.checkBox_stacked.stateChanged.connect(self.state_stacked)
+        # self.ui.checkBox_scrollable.stateChanged.connect(self.state_scrollable)  # TODO reenable
         self.ui.checkBox_labels.stateChanged.connect(self.state_labels)
         self.ui.checkBox_gridOn.stateChanged.connect(self.state_grid)
         self.ui.checkBox_alt_ths.stateChanged.connect(self.state_alt_ths)
         self.ui.lineEdit_alt_ths.editingFinished.connect(self.handleAltThs)
-        # self.ui.lineEdit_filter_airline.editingFinished.connect(self.handle_airline_filter) # TODO for next designer update
-        # self.ui.lineEdit_filter_model.editingFinished.connect(self.handle_model_filter)
+        self.ui.lineEdit_filter_airline.editingFinished.connect(self.handle_airline_filter)
+        self.ui.lineEdit_filter_model.editingFinished.connect(self.handle_model_filter)
         self.ui.dateTimeEdit_analyseStart.dateTimeChanged.connect(self.handle_analyseStart)
         self.ui.dateTimeEdit_analyseEnd.dateTimeChanged.connect(self.handle_analyseEnd)
         self.ui.dateTimeEdit_filterStart.dateTimeChanged.connect(self.handle_filterStart)
         self.ui.dateTimeEdit_filterEnd.dateTimeChanged.connect(self.handle_filterEnd)
         self.ui.comboBox_config.currentIndexChanged.connect(self.handle_comboBox_config)
-        # self.ui.checkBox_waypoints.stateChanged.connect(self.state_waypoints)
-        # self.ui.checkBox_liveRun.stateChanged.connect(self.state_live_run)
+        self.ui.checkBox_waypoints.stateChanged.connect(self.state_waypoints)
+        self.ui.checkBox_liveRun.stateChanged.connect(self.state_live_run)
+        # self.ui.pushButton_resetFilter.clicked.connect(self.reset_filters)
+        # self.ui.checkBoxDelimit.stateChanged.connect(self.delimited_analysis)
+
+
+
+        # TODO state delimited timedate analysis
 
 
         # pallete
@@ -100,6 +108,7 @@ class Controller:
                                                           "", "All Files (*);;Hexx Files (*.hex)", options=options)
         if files:
             self.core.infiles = [file(infile) for infile in files]
+            self.disable_run(False)
             print(files)
         self.setCurrent('%d files selected' % (len(files)))
 
@@ -179,6 +188,10 @@ class Controller:
         # else:
         #     self.core.q.put((self.update_progressbar, (val,), {}))  # send the answer to the main thread's queue
 
+    def delimited_analysis(self, checked):
+        self.core.is_delimited = bool(checked)
+        self.print_console('delimited analysis: ' + str(bool(checked)))
+
     def update_histo(self):
         self.histo.update_figure()
 
@@ -191,7 +204,7 @@ class Controller:
         self.print_console('scroll resize: ' + str(bool(checked)))
 
     def state_grid(self, checked):
-        self.ui.matplotlibWidget.gridOn = bool(checked)
+        self.ui.matplotlibWidget.set_grid(bool(checked))
         self.print_console('grid on: ' + str(bool(checked)))
 
     def state_labels(self, checked):
@@ -207,9 +220,11 @@ class Controller:
         self.print_console('plot off: ' + str(bool(checked)))
 
     def state_waypoints(self, checked):
+        self.core.evaluate_waypoints = bool(checked)
         self.print_console('evaluate waypoints: ' + str(bool(checked)))
 
     def state_live_run(self, checked):
+        self.core.live_run = bool(checked)
         self.print_console('is live run: ' + str(bool(checked)))
 
     def print_console(self, new_text):
@@ -226,32 +241,53 @@ class Controller:
                 self.print_console("[error] new altitude threshold for timestamp: only integers please")
         self.ui.lineEdit_alt_ths.setModified(False)
 
-    def handle_airline_filter(self):  # TODO
+    def handle_airline_filter(self):
         if self.ui.lineEdit_filter_airline.isModified():
-            airline_filter_text = self.ui.lineEdit_filter_airline.text().split(',')
-            self.print_console("new airline filter set to: " + self.ui.lineEdit_filter_airline.text())
+            airline_filter_list = self.ui.lineEdit_filter_airline.text().strip(' ').upper().split(',')
+            self.core.airline_filter = airline_filter_list if airline_filter_list[0] else None
+            self.core.make_display()
+            self.print_console("new airline filter set to: " + ','.join(airline_filter_list))
         self.ui.lineEdit_filter_airline.setModified(False)
 
     def handle_model_filter(self):
         if self.ui.lineEdit_filter_model.isModified():
-            model_filter_text = self.ui.lineEdit_filter_model.text().split(',')
-            self.print_console("new airline filter set to: " + self.ui.lineEdit_filter_model.text())
+            model_filter_list = self.ui.lineEdit_filter_model.text().strip(' ').upper().split(',')
+            self.core.model_filter = model_filter_list if model_filter_list[0] else None
+            self.core.make_display()
+            self.print_console("new model filter set to: " + ','.join(model_filter_list))
         self.ui.lineEdit_filter_model.setModified(False)
 
     def handle_analyseStart(self):
-        self.print_console("new analyse start: " + str(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime()))
+        self.core.analyseStart = time.mktime(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime().timetuple())
+        self.print_console("new analyse start set to: " + str(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime()))
 
     def handle_analyseEnd(self):
-        self.print_console("new analyse end: " + str(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime()))
+        self.core.analyseEnd = time.mktime(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime().timetuple())
+        self.print_console("new analyse end set to: " + str(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime()))
 
     def handle_filterStart(self):
-        self.print_console("new filter start: " + str(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime()))
+        self.core.start_filter = time.mktime(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime().timetuple())
+        self.core.make_display()
+        self.print_console("new filter start set to: " + str(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime()))
 
     def handle_filterEnd(self):
-        self.print_console("new filter end: " + str(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime()))
+        self.core.end_filter = time.mktime(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime().timetuple())
+        self.core.make_display()
+        self.print_console("new filter end set to: " + str(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime()))
 
     def handle_comboBox_config(self):
-        self.print_console("config filter is: " + comboBox_config_options[self.ui.comboBox_config.currentIndex()])
+        self.core.config_filter = comboBox_config_options[self.ui.comboBox_config.currentIndex()]
+        self.core.make_display()
+        self.core.make_display()
+        self.print_console("config filter set to: " + comboBox_config_options[self.ui.comboBox_config.currentIndex()])
+
+    def reset_filters(self):
+        self.core.airline_filter = None
+        self.core.model_filter = None
+        self.core.config_filter = None
+        self.core.start_filter = None
+        self.core.end_filter = None
+        self.core.make_display()
 
 
 class MatplotlibWidget(QtWidgets.QWidget):
@@ -292,17 +328,19 @@ class MatplotlibWidget(QtWidgets.QWidget):
         # self.scroll.resize(self.layoutVertical.geometry().width(), self.layoutVertical.geometry().height())
 
         self.bins = [1]
-        self.binsize = 15  # min
+        self.binsize = 15*60  # min
         self.max_y = self.binsize*1.2
-        self.plot_off = False
+        self.plot_off = True
         self.scroll_resize = False
         self.show_labels = False
-        self.gridOn = True
         self.reset_fig()
+        self.axes.grid(True)
+
+    def set_grid(self, bool):
+        self.axes.grid(bool)
 
     def reset_fig(self):
         self.axes.clear()
-        self.axes.grid(self.gridOn)
         self.axes.set_title('Dep/Arr', loc='center')
         self.resize_fig()
 
@@ -322,24 +360,26 @@ class MatplotlibWidget(QtWidgets.QWidget):
         if not self.plot_off:
             self.reset_fig()
             # operation histogram
-            last_time = op_list[0].get_op_timestamp() - op_list[0].get_op_timestamp() % (self.binsize * 60)
+            # last_time = op_list[0].get_op_timestamp() - op_list[0].get_op_timestamp() % (self.binsize * 60)
             dep = []
             arr = []
             for m, op in enumerate(op_list):
-                delay = (last_time - op.get_op_timestamp())/60.0
                 if op.LorT == 'T':
-                    dep.append(delay)
+                    dep.append(op.get_op_timestamp())
                 elif op.LorT == 'L':
-                    arr.append(delay)
-            self.bins = np.arange(0, arr[-1]/self.binsize + 1)*self.binsize
+                    arr.append(op.get_op_timestamp())
+            self.bins = np.arange(arr[0], arr[-1])
 
             [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, stacked=True, rwidth=0.9,
                                                       color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
             if n1.any() and max(n1) > self.max_y:
                 self.max_y = max(n1)+2
 
+            # labels is an array of tick labels.
+            label_text = [time_string(loc) for loc in xticks()[0]]
+            self.axes.set_xticklabels(label_text)
+
             self.axes.legend(loc=2)
-            # self.max_y = max([x+y for x, y in zip(n[0], n[1])])
             if self.show_labels:
                 for m1, count1 in enumerate(n0):
                     self.axes.text(self.bins[m1] + self.binsize*0.25, count1+self.max_y*0.02, '{:.0f}'.format(count1))
@@ -348,12 +388,11 @@ class MatplotlibWidget(QtWidgets.QWidget):
 
             # config changes vertical lines
             for m, config in enumerate(config_list):
-                self.axes.plot([(last_time - config.from_epoch)/60.0]*2, [0, 0.85*self.max_y], 'b--', linewidth=1)
-                self.axes.text((last_time - config.from_epoch)/60.0-self.binsize*0.2, self.max_y*0.9, config.config)
+                self.axes.plot([config.from_epoch]*2, [0, 0.85*self.max_y], 'b--', linewidth=1)
+                self.axes.text(config.from_epoch-self.binsize*0.2, self.max_y*0.9, config.config)
 
             # line of mean horizontal line (per day)
             avg = np.average(n1)
-            # avg = np.average([x+y for x, y in zip(n0, n1)])
             self.axes.plot(self.bins, [avg] * len(self.bins), 'k--', linewidth=0.6)
             self.prop.setText("\tBin size is: " + '{:d}'.format(self.binsize) + " min\t"
                               "Average throughput per bin: " + '{:.1f}'.format(avg))

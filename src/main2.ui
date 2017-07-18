@@ -256,16 +256,27 @@
        <property name="verticalSpacing">
         <number>5</number>
        </property>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_11">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+       <item row="2" column="4">
+        <widget class="QDateTimeEdit" name="dateTimeEdit_filterEnd">
+         <property name="date">
+          <date>
+           <year>2020</year>
+           <month>1</month>
+           <day>1</day>
+          </date>
          </property>
+         <property name="displayFormat">
+          <string>yyyy-MM-dd hh:mm:ss</string>
+         </property>
+         <property name="calendarPopup">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>Filter by airline</string>
+          <string>Start time:</string>
          </property>
         </widget>
        </item>
@@ -282,8 +293,15 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QLabel" name="label_13">
+       <item row="1" column="4">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>End time:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_11">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -291,7 +309,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Filter by config</string>
+          <string>Filter by airline</string>
          </property>
         </widget>
        </item>
@@ -317,37 +335,6 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="4">
-        <widget class="QDateTimeEdit" name="dateTimeEdit_filterEnd">
-         <property name="date">
-          <date>
-           <year>2020</year>
-           <month>1</month>
-           <day>1</day>
-          </date>
-         </property>
-         <property name="displayFormat">
-          <string>yyyy-MM-dd hh:mm:ss</string>
-         </property>
-         <property name="calendarPopup">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>End time:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="3">
-        <widget class="QLabel" name="label_14">
-         <property name="text">
-          <string>Start time:</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="3">
         <widget class="QDateTimeEdit" name="dateTimeEdit_filterStart">
          <property name="displayFormat">
@@ -361,8 +348,40 @@
        <item row="2" column="1">
         <widget class="QLineEdit" name="lineEdit_filter_model"/>
        </item>
+       <item row="1" column="2">
+        <widget class="QLabel" name="label_13">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Filter by config</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="0">
         <widget class="QLineEdit" name="lineEdit_filter_airline"/>
+       </item>
+       <item row="2" column="5">
+        <widget class="QPushButton" name="pushButton_resetFilter">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Reset</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -376,7 +395,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="Configuration">
         <property name="enabled">
@@ -436,7 +455,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>50</height>
+               <height>150</height>
               </size>
              </property>
              <property name="maximumSize">
@@ -472,7 +491,7 @@
               <bool>true</bool>
              </property>
              <property name="rowCount">
-              <number>1</number>
+              <number>0</number>
              </property>
              <property name="columnCount">
               <number>15</number>
@@ -495,7 +514,6 @@
              <attribute name="verticalHeaderShowSortIndicator" stdset="0">
               <bool>false</bool>
              </attribute>
-             <row/>
              <column/>
              <column/>
              <column/>
@@ -911,6 +929,16 @@
              <property name="spacing">
               <number>10</number>
              </property>
+             <item row="8" column="1">
+              <widget class="QCheckBox" name="checkBox_gridOn">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
              <item row="2" column="0">
               <widget class="QLabel" name="label_10">
                <property name="sizePolicy">
@@ -949,48 +977,7 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="1">
-              <widget class="QCheckBox" name="checkBox_stacked">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>60</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QCheckBox" name="checkBox_labels">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>60</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
+             <item row="6" column="0">
               <widget class="QLabel" name="label_8">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -1006,73 +993,6 @@
                </property>
                <property name="text">
                 <string>Col width:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label_7">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>70</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Stacked:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="label_5">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Scrollable:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
-              <widget class="QCheckBox" name="checkBox_scrollable">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>60</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QComboBox" name="comboBox_plotBin">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>60</width>
-                 <height>0</height>
-                </size>
                </property>
               </widget>
              </item>
@@ -1095,7 +1015,49 @@
                </property>
               </widget>
              </item>
+             <item row="4" column="1">
+              <widget class="QComboBox" name="comboBox_plotBin">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>60</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </item>
              <item row="8" column="0">
+              <widget class="QLabel" name="label_15">
+               <property name="text">
+                <string>Grid on:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QSpinBox" name="spinBox_colWidth">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>60</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="value">
+                <number>20</number>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
               <widget class="QLabel" name="label_9">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -1115,7 +1077,7 @@
               </widget>
              </item>
              <item row="7" column="1">
-              <widget class="QSpinBox" name="spinBox_colWidth">
+              <widget class="QCheckBox" name="checkBox_labels">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -1128,25 +1090,40 @@
                  <height>0</height>
                 </size>
                </property>
-               <property name="value">
-                <number>20</number>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="0">
-              <widget class="QLabel" name="label_15">
-               <property name="text">
-                <string>Grid on:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="1">
-              <widget class="QCheckBox" name="checkBox_gridOn">
                <property name="text">
                 <string/>
                </property>
-               <property name="checked">
-                <bool>true</bool>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_5">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Scrollable:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QCheckBox" name="checkBox_scrollable">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>60</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
                </property>
               </widget>
              </item>
@@ -1222,7 +1199,7 @@
              <item row="0" column="2">
               <widget class="QLabel" name="label_16">
                <property name="text">
-                <string>feet</string>
+                <string> feet</string>
                </property>
               </widget>
              </item>
@@ -1475,7 +1452,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>delimited time range</string>
+                <string>Delimited time range</string>
                </property>
               </widget>
              </item>
@@ -1595,6 +1572,11 @@
                <horstretch>0</horstretch>
                <verstretch>1</verstretch>
               </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
              </property>
              <property name="focusPolicy">
               <enum>Qt::ClickFocus</enum>

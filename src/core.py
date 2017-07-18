@@ -67,6 +67,7 @@ class DataExtractorThread(threading.Thread):
             self.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
+            # validate when finished
             self.core.validate(False)
 
         if not self.forced_exit:
@@ -130,9 +131,15 @@ class OperationRefreshThread(threading.Thread):
     def display(self):
         op_list = []
         for op in (self.operation_dict.values()):
-            op_list.append(op)
+            if (not self.core.model_filter or (op.flight.aircraft.model in self.core.model_filter)) and\
+                (not self.core.airline_filter or (op.flight.aircraft.operator in self.core.airline_filter)) and\
+                    (not self.core.config_filter or (op.config in self.core.config_filter)) and\
+                    (not self.core.start_filter or (op.get_op_timestamp() >= self.core.start_filter)) and\
+                    (not self.core.end_filter or (op.get_op_timestamp() <= self.core.end_filter)):
 
-        if len(op_list) > 2:
+                op_list.append(op)
+
+        if len(op_list) > -1:
             op_list.sort()
             config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
             self.core.controller.update_tableConfig(config_list)
@@ -154,9 +161,21 @@ class Core:  # TODO does this have to be a class??
         self.console_text = ''
         self.is_light_run = False
         self.live_run = False
-        self.lock = threading.Lock()
-        # queue to run functions from main thread
+        self.lock1 = threading.Lock()
+        self.lock2 = threading.Lock()
+        # queue to run functions from main thread TODO...
         self.q = Queue()
+        # start/end times
+        self.is_delimited = False
+        self.analyseStart = None
+        self.analyseEnd = None
+        # filters
+        self.evaluate_waypoints = True
+        self.airline_filter = None
+        self.model_filter = None
+        self.config_filter = None
+        self.start_filter = None
+        self.end_filter = None
 
     def run(self):
         self.controller.disable_for_light(False)
@@ -177,7 +196,8 @@ class Core:  # TODO does this have to be a class??
             if self.live_run:
                 self.validate(self.live_run)
             self.controller.setHap('Running')
-            self.controller.update_progressbar(0)
+            with self.lock2:
+                self.controller.update_progressbar(0)
 
     def validate(self, live_run):
         self.operationRefresh = OperationRefreshThread(self.dataExtractor, self, live_run)
@@ -217,16 +237,20 @@ class Core:  # TODO does this have to be a class??
         self.operationRefresh.shutdown()
         self.write_analysis()
         self.dataExtractor = None
-        self.operationRefresh = None
         self.controller.setHap('Done')
         # self.controller.update_progressbar(100)  # TODO this will hang the program!
         self.controller.disable_run(False)
 
     def set_controller(self, controller):
         self.controller = controller
+        self.controller.disable_run(True)
+
+    def make_display(self):
+        if self.operationRefresh:
+            self.operationRefresh.display()
 
     def write_analysis(self):
-        with self.lock:
+        with self.lock1:
             op_list = []
             for op in self.operationRefresh.operation_dict.values():
                 op_list.append(op)

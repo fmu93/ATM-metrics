@@ -24,7 +24,7 @@ class Aircraft:
         self.last_kolls = None
         self.pos_buffer_dict = {}  # [epoch] records all positions but only few minutes before
         self.vel_buffer_dict = {}  # [epoch]
-        self.type = icao_database.get_mdl(self.icao)
+        self.model = icao_database.get_mdl(self.icao)
         self.regid = icao_database.get_regid(self.icao)
         self.operator = icao_database.get_operator(self.icao)
         self.last_waypoint_check = 0
@@ -225,6 +225,7 @@ class Operation:
         self.last_validation = None
         self.IorO = None  # In or Out of airport, Approach or Take-Off
         self.LorT = None  # basically same as IorO but only after validation
+        self.config = None
         self.guess_count = 0
         self.min_pos_valid = 2
         self.vrate_list = []
@@ -453,16 +454,25 @@ class Operation:
                         elif zone.zone > 0:  # missed approach, but in zone 0 it gives trouble
                             self.op_runway = guess_str
 
-            if self.op_runway is not None and ('32' in self.op_runway or '18' in self.op_runway):
-                self.LorT = 'L'
-            elif self.op_runway is not None and ('36' in self.op_runway or '14' in self.op_runway):
-                self.LorT = 'T'
+            if self.op_runway:
+                if '32' in self.op_runway:
+                    self.LorT = 'L'
+                    self.config = 'N'
+                elif '18' in self.op_runway:
+                    self.LorT = 'L'
+                    self.config = 'S'
+                elif '36' in self.op_runway:
+                    self.LorT = 'T'
+                    self.config = 'N'
+                elif '14' in self.op_runway:
+                    self.LorT = 'T'
+                    self.config = 'S'
 
         self.last_validation = epoch
         return self
 
     def get_op_rows(self):
-        return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.type,
+        return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.model,
                 (self.flight.aircraft.operator if len(self.flight.aircraft.operator) <= 8 else self.flight.aircraft.operator[0:8]),
                 ('{:.0f}'.format(self.get_op_timestamp()) if self.get_op_timestamp() else 'None'),
                 time_string(self.runway_ths_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),

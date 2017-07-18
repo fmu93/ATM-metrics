@@ -26,7 +26,7 @@ class FlightsLog:
                 try:
                     guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                                          ('{:<8}'.format(operation.flight.callsign.call), '{:6}'.format(operation.flight.aircraft.icao),
-                                          '{:4}'.format(operation.flight.aircraft.type),
+                                          '{:4}'.format(operation.flight.aircraft.model),
                                           ('{:.0f}'.format(operation.get_op_timestamp()) if operation.get_op_timestamp() else 'None'),
                                           date, '{:1}'.format(operation.guess_count),'{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
@@ -80,12 +80,8 @@ class ConfigLog:
             for operation in self.final_op_list:
                 if operation.get_op_timestamp() and operation.op_runway:
                     first_epoch = operation.get_op_timestamp()
-                    if '32' in operation.op_runway or '36' in operation.op_runway:
-                        last_config = 'N'
-                        config = 'N'
-                    else:
-                        last_config = 'S'
-                        config = 'S'
+                    last_config = operation.config
+                    config = operation.config
                     break
 
             from_epoch = first_epoch
@@ -96,22 +92,21 @@ class ConfigLog:
             total_count = 0
             miss_count = 0
             prev_timestamp = 0
-            prev_op = '-'
+            prev_op = None
             log = False
             for operation in self.final_op_list:
                 op_timestamp = operation.get_op_timestamp()
-                op = operation.op_runway
 
-                if op_timestamp and op and prev_op:
-                    if '32' in op or '36' in op:  # now NORTH
-                        if '18' in prev_op or '14' in prev_op:  # prev south
+                if op_timestamp and prev_op:
+                    if operation.config == 'N':  # now NORTH
+                        if prev_op.config == 'S':  # prev south
                             until_epoch = prev_timestamp
                             log = True
                             config = 'S'
                             last_config = 'N'
 
-                    elif '18' in op or '14' in op:  # now SOUTH
-                        if '32' in prev_op or '36' in prev_op:  # prev north
+                    elif operation.config == 'S':  # now SOUTH
+                        if prev_op.config == 'N':  # prev north
                             until_epoch = prev_timestamp
                             log = True
                             config = 'N'
@@ -127,7 +122,7 @@ class ConfigLog:
 
                     try:
                         total_count += 1
-                        counter[self.ops.index(op)] += 1
+                        counter[self.ops.index(operation.op_runway)] += 1
                         # for the misses, we could do it per known missed since we detected the second approach
                         # or per detected missed itself, which may not be a missed in the end
                         if operation.flight.has_missed_app:
@@ -135,8 +130,8 @@ class ConfigLog:
                     except Exception:
                         print 'error in op_timestamp, type: ' + type(op_timestamp)  # doesnt make sense this here...
 
-                    prev_timestamp = operation.get_op_timestamp()
-                    prev_op = operation.op_runway
+                prev_timestamp = operation.get_op_timestamp()
+                prev_op = operation
 
             self.add_config(last_config, from_epoch, last_epoch, counter, miss_count)
 
