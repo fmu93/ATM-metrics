@@ -9,9 +9,9 @@ import numpy as np
 import threading
 
 flight_headers = ['call', 'icao', 'type', 'operator', 'opTimestamp','opTimestampDate','#pos','V(fpm)','GS(kts)','(deg)',
-                  'track','runway', 'L/TO', 'change_comm','miss_comm','op_comm', 'waypoints']
+                  'track','runway', 'L/TO', 'change_comm','miss_comm','op_comm', 'SID/STAR']
 config_headers = ['From time', 'Until time', 'Duration', 'Config', 'Total', '32L', '32R', '36L', '36R', '18L', '18R', '14L', '14R',
-                  'missed', 'Slack (min)']
+                  'missed', 'Slack']
 comboBox_config_options = ['N&S', 'N', 'S']
 comboBox_plotBin_options = ['10', '15', '30', '60', '120']
 
@@ -52,6 +52,15 @@ class Controller:
         self.ui.checkBox_gridOn.stateChanged.connect(self.state_grid)
         self.ui.checkBox_alt_ths.stateChanged.connect(self.state_alt_ths)
         self.ui.lineEdit_alt_ths.editingFinished.connect(self.handleAltThs)
+        # self.ui.lineEdit_filter_airline.editingFinished.connect(self.handle_airline_filter) # TODO for next designer update
+        # self.ui.lineEdit_filter_model.editingFinished.connect(self.handle_model_filter)
+        self.ui.dateTimeEdit_analyseStart.dateTimeChanged.connect(self.handle_analyseStart)
+        self.ui.dateTimeEdit_analyseEnd.dateTimeChanged.connect(self.handle_analyseEnd)
+        self.ui.dateTimeEdit_filterStart.dateTimeChanged.connect(self.handle_filterStart)
+        self.ui.dateTimeEdit_filterEnd.dateTimeChanged.connect(self.handle_filterEnd)
+        self.ui.comboBox_config.currentIndexChanged.connect(self.handle_comboBox_config)
+        # self.ui.checkBox_waypoints.stateChanged.connect(self.state_waypoints)
+        # self.ui.checkBox_liveRun.stateChanged.connect(self.state_live_run)
 
 
         # pallete
@@ -95,6 +104,7 @@ class Controller:
         self.setCurrent('%d files selected' % (len(files)))
 
     def update_tableFlights(self, op_list, epoch_now):
+        op_list.sort(reverse=True)
         self.ui.tableFlights.clearContents()
         for m, op in enumerate(op_list):
             for n, item in enumerate(op.get_op_rows()):
@@ -117,6 +127,7 @@ class Controller:
         self.ui.tableFlights.resizeColumnsToContents()
 
     def update_tableConfig(self, config_list):
+        config_list.sort()
         self.ui.tableConfig.clearContents()
         for m, config in enumerate(config_list):
             if m == self.ui.tableConfig.rowCount():
@@ -195,6 +206,12 @@ class Controller:
         self.ui.matplotlibWidget.plot_off = bool(checked)
         self.print_console('plot off: ' + str(bool(checked)))
 
+    def state_waypoints(self, checked):
+        self.print_console('evaluate waypoints: ' + str(bool(checked)))
+
+    def state_live_run(self, checked):
+        self.print_console('is live run: ' + str(bool(checked)))
+
     def print_console(self, new_text):
         self.core.console_text += new_text + '\n'
         self.ui.console.setPlainText(self.core.console_text)
@@ -208,6 +225,33 @@ class Controller:
             except Exception:
                 self.print_console("[error] new altitude threshold for timestamp: only integers please")
         self.ui.lineEdit_alt_ths.setModified(False)
+
+    def handle_airline_filter(self):  # TODO
+        if self.ui.lineEdit_filter_airline.isModified():
+            airline_filter_text = self.ui.lineEdit_filter_airline.text().split(',')
+            self.print_console("new airline filter set to: " + self.ui.lineEdit_filter_airline.text())
+        self.ui.lineEdit_filter_airline.setModified(False)
+
+    def handle_model_filter(self):
+        if self.ui.lineEdit_filter_model.isModified():
+            model_filter_text = self.ui.lineEdit_filter_model.text().split(',')
+            self.print_console("new airline filter set to: " + self.ui.lineEdit_filter_model.text())
+        self.ui.lineEdit_filter_model.setModified(False)
+
+    def handle_analyseStart(self):
+        self.print_console("new analyse start: " + str(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime()))
+
+    def handle_analyseEnd(self):
+        self.print_console("new analyse end: " + str(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime()))
+
+    def handle_filterStart(self):
+        self.print_console("new filter start: " + str(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime()))
+
+    def handle_filterEnd(self):
+        self.print_console("new filter end: " + str(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime()))
+
+    def handle_comboBox_config(self):
+        self.print_console("config filter is: " + comboBox_config_options[self.ui.comboBox_config.currentIndex()])
 
 
 class MatplotlibWidget(QtWidgets.QWidget):
@@ -253,7 +297,6 @@ class MatplotlibWidget(QtWidgets.QWidget):
         self.plot_off = False
         self.scroll_resize = False
         self.show_labels = False
-        self.stacked = True
         self.gridOn = True
         self.reset_fig()
 
@@ -289,17 +332,12 @@ class MatplotlibWidget(QtWidgets.QWidget):
                 elif op.LorT == 'L':
                     arr.append(delay)
             self.bins = np.arange(0, arr[-1]/self.binsize + 1)*self.binsize
-            if self.stacked:
-                [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, stacked=True, rwidth=0.9,
-                                                          color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
-                if n1.any() and max(n1) > self.max_y:
-                    self.max_y = max(n1)+2
-            else:  # TODO adapt all to stacked or not
-                [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, histtype='bar', rwidth=0.9,
-                                                          color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
 
-            # n0, bins2, patches = self.axes.hist(arr, bins=self.bins, stacked=True, color='#9CB380', rwidth=0.9, label='arr')
-            # n1, bins2, patches = self.axes.hist(dep, bins=self.bins, stacked=True, color='#5CC8FF', rwidth=0.9, label='dep')
+            [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, stacked=True, rwidth=0.9,
+                                                      color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
+            if n1.any() and max(n1) > self.max_y:
+                self.max_y = max(n1)+2
+
             self.axes.legend(loc=2)
             # self.max_y = max([x+y for x, y in zip(n[0], n[1])])
             if self.show_labels:

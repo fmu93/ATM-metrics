@@ -17,6 +17,7 @@ class Metrics:
         self.last_generic_diff = 0
         self.dataExtractor = dataExtractor
         self.epoch_now = 0
+        self.evaluate_waypoints = True
         self.dead = False
         self.line_count = 0
 
@@ -104,25 +105,32 @@ class Metrics:
                 elif data[7]:  # ground boolean
                     alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
                     FL = 20
-                current_aircraft.set_new_pos(self.epoch_now, pos.x, pos.y, alt_uncorrected)
+                # only store previous points if we are interested in waypoints
+                if self.evaluate_waypoints:
+                    current_aircraft.set_new_pos(self.epoch_now, pos.x, pos.y, alt_uncorrected)
             # get a new line if now position information (we already checked for any other kind of valuable info)
             else:
                 continue
 
             # detect waypoints. Efficient manner by making lines between periodical points TODO make more eff
-            line = None
-            if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
-                prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 360)
-                if prev_tbw_pos:
-                    line = LineString([pos, (prev_tbw_pos.lon, prev_tbw_pos.lat)])
-            if line:
-                for waypoint in waypoints_dict.keys():
-                    if line.crosses(waypoints_dict[waypoint]):
-                        current_flight.set_waypoint(waypoint)
-                current_aircraft.last_waypoint_check = self.epoch_now
+            if self.evaluate_waypoints:
+                line = None
+                if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
+                    prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 360)
+                    if prev_tbw_pos:
+                        line = LineString([pos, (prev_tbw_pos.lon, prev_tbw_pos.lat)])
+                if line:
+                    for waypoint in waypoints_dict.keys():
+                        if line.crosses(waypoints_dict[waypoint]):
+                            current_flight.set_waypoint(waypoint)
+                    current_aircraft.last_waypoint_check = self.epoch_now
 
             # evaluate further only if below FL 130 and within TMA
             if pos and FL and alt_uncorrected and FL < 130 and airport_poly.contains(pos):
+                # store prev positions only inside TMA if not interested in waypoints
+                if not self.evaluate_waypoints:
+                    current_aircraft.set_new_pos(self.epoch_now, pos.x, pos.y, alt_uncorrected)
+
                 NorS = None
                 EorW = None
                 poly = None
@@ -203,15 +211,7 @@ class Metrics:
                             current_flight.set_guess(self.epoch_now, NorS, EorW, ttrack, vrate, inclin, gs, zone)
 
                             # here we set the alt_ths_operation timestamp
-                            if current_aircraft.last_kolls and self.epoch_now - current_aircraft.last_kolls < 900:
-                                current_diff = current_aircraft.get_current_diff(self.epoch_now)
-                                # update generic_current_diff only every 10 min
-                                if self.epoch_now - self.last_generic_diff > 600:
-                                    self.generic_current_diff = current_diff
-                                    self.last_generic_diff = self.epoch_now
-                                    print 'new generic kolls: ', time_string(self.epoch_now), self.generic_current_diff
-                            else:
-                                current_diff = self.generic_current_diff
+                            current_diff = current_aircraft.get_current_diff(self.epoch_now)
                             alt_corr = alt_uncorrected - current_diff
 
                             prev10_30_pos = current_aircraft.get_position_delimited(self.epoch_now, 10, 30)
@@ -223,8 +223,6 @@ class Metrics:
                                         self.epoch_now, prev_epoch, alt_corr, prev_alt_corr, NorS)
 
         database.close()
-        # progress bar to 100% TODO program hangs because of this.. set range to [0-101]?
-        # self.dataExtractor.core.controller.update_progressbar(100)
 
     def stop(self):
         self.dead = True

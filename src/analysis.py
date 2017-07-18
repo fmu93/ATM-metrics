@@ -17,21 +17,21 @@ class FlightsLog:
 
         with open(log_file_name, 'w') as guess_log_file:
             guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\t(deg)\t"\
-            "track\trunway\tchange_comment\tmiss_comment\top_comment\twaypoints\n")
+            "track\trunway\tchange_comment\tmiss_comment\top_comment\tSID/STAR\twaypoints\n")
             for operation in self.final_op_list:
                 date = time_string(operation.get_op_timestamp())
                 hour = time.gmtime(operation.get_op_timestamp()).tm_hour
                 if hour - prev_hour != 0:
                     guess_log_file.write('\n')
                 try:
-                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                    guess_log_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                                          ('{:<8}'.format(operation.flight.callsign.call), '{:6}'.format(operation.flight.aircraft.icao),
                                           '{:4}'.format(operation.flight.aircraft.type),
                                           ('{:.0f}'.format(operation.get_op_timestamp()) if operation.get_op_timestamp() else 'None'),
                                           date, '{:1}'.format(operation.guess_count),'{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
                                           '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway, operation.zone_change_comment,
-                                          operation.miss_comment, operation.op_comment, ', '.join(operation.flight.waypoints)))
+                                          operation.miss_comment, operation.op_comment, operation.flight.sid_star, ', '.join(operation.flight.waypoints)))
                 except Exception:
                     print 'Error in logging!!'
                     guess_log_file.write('Error with logging ' + '{:6}'.format(operation.flight.aircraft.icao) + '\n')
@@ -162,7 +162,7 @@ class Config:
                 '{:d}'.format(self.runway_list[1]), '{:d}'.format(self.runway_list[2]),
                 '{:d}'.format(self.runway_list[3]), '{:d}'.format(self.runway_list[4]),
                 '{:d}'.format(self.runway_list[5]), '{:d}'.format(self.runway_list[6]),
-                '{:d}'.format(self.runway_list[7]), '{:d}'.format(self.missed), '{:.2f}'.format(self.slack/60.0)]
+                '{:d}'.format(self.runway_list[7]), '{:d}'.format(self.missed), duration_string(self.slack)]
 
 
 class OpByType:

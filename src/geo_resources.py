@@ -221,7 +221,7 @@ poly_WYP_BRA = point_WYP_BRA.buffer(wyp_radius/4)
 waypoints_dict['BRA'] = poly_WYP_BRA
 
 
-# SID TODO SID/STAR
+# SID/STAR
 class WYP_seq:
     def __init__(self, name, cat, seq):
         self.name = name
@@ -244,6 +244,7 @@ class WYP_seq:
                 return False
         return True
 
+# SID
 # 14R diurno
 BARDI2Q = WYP_seq('BARDI2Q', 'SID: 14R', ['NVS', 'BARDI'])
 PINAR2B = WYP_seq('PINAR2B', 'SID: 14R', ['RBO', 'BARDI'])
@@ -321,7 +322,7 @@ TLD3Z = WYP_seq('TLD3Z', 'STAR: 18L/18R, west', ['TLD', 'NVS', 'RESBI', 'SIE'])
 RIDAV1A = WYP_seq('RIDAV1A', 'STAR: 18L/18R, west', ['RIDAV', 'BBI', 'EREMA', 'LALPI'])
 TLD5A = WYP_seq('TLD5A', 'STAR: 18L/18R, west', ['TLD', 'NVS', 'RESBI', 'LALPI'])
 ORBIS4A = WYP_seq('ORBIS4A', 'STAR: 18L/18R, west', ['ORBIS', 'EREMA', 'LALPI'])
-ORBIS1Z = WYP_seq('ORBIS4A', 'STAR: 18L/18R, west', ['ORBIS', 'SIE'])
+ORBIS1Z = WYP_seq('ORBIS1Z', 'STAR: 18L/18R, west', ['ORBIS', 'SIE'])
 ZMR3A = WYP_seq('ZMR3A', 'STAR: 18L/18R, west', ['ZMR', 'EREMA', 'LALPI'])
 
 # make a list of all SID_STAR

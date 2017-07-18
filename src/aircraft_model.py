@@ -1,6 +1,7 @@
 from p_tools import icao_database, time_string, sortedDictKeys
-from geo_resources import runway_ths_dict, all_wyp_seq
+from geo_resources import runway_ths_dict, all_wyp_seq, TMA
 from geopy.distance import great_circle
+from shapely.geometry import Point
 
 use_alt_ths_timestamp = False
 no_call = 'no_call'
@@ -9,6 +10,10 @@ alt_threshold = airport_altitude + 800  # TODO make different alt thresholds for
 
 
 class Aircraft:
+    # generic kollsman for ac with no kollsman, defined as static variables
+    last_generic_diff = 0
+    generic_current_diff = 0
+
     def __init__(self, icao, first_seen):
         self.icao = icao
         self.flights_dict = {}  # [Callsign] Flights
@@ -76,13 +81,20 @@ class Aircraft:
     def set_kolls(self, kolls, epoch):
         self.current_kolls = kolls
         self.last_kolls = epoch
+        if epoch - Aircraft.last_generic_diff > 1800:
+            pos = self.get_position_delimited(epoch, 0, 20)
+            # below FL 80 = 2438 m and around airport
+            if pos and pos.alt < 2438 and TMA.contains(Point(pos.lon, pos.lat)):
+                Aircraft.generic_current_diff = float(30 * (1013 - kolls))
+                Aircraft.last_generic_diff = epoch
+                # TODO save kollsman history and display
 
     def get_current_diff(self, epoch):
-        current_diff = 0
-        # return None if last time of koll was longer than 30 min ago TODO
+        # return generic_current_diff if last time of self koll was longer than 30 min ago
         if self.current_kolls and epoch - self.last_kolls < 1800:
-            current_diff = float(30 * (1013 - self.current_kolls))
-        return current_diff
+            return float(30 * (1013 - self.current_kolls))
+        else:
+            return Aircraft.generic_current_diff
 
     def set_new_pos(self, epoch, lon, lat, alt):
         # some icao sending positions may be a ground vehicle
@@ -195,10 +207,11 @@ class Flight:
 
     def get_sid_star(self, epoch):
         # only from first operation makes sense
-        for wyp_seq in all_wyp_seq:
-            if wyp_seq.check_runway(self.operations[0].op_runway) and wyp_seq.check_seq(self.waypoints):
-                self.sid_star = wyp_seq.name
-        self.last_sid_star_check = epoch
+        if self.operations:
+            for wyp_seq in all_wyp_seq:
+                if wyp_seq.check_runway(self.operations[0].op_runway) and wyp_seq.check_seq(self.waypoints):
+                    self.sid_star = wyp_seq.name
+            self.last_sid_star_check = epoch
 
 
 class Operation:
@@ -456,7 +469,7 @@ class Operation:
                 '{:3.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,
                 self.LorT,
-                self.zone_change_comment, self.miss_comment, self.op_comment, ', '.join(self.flight.waypoints)]
+                self.zone_change_comment, self.miss_comment, self.op_comment, self.flight.sid_star]
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)

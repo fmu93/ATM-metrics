@@ -67,6 +67,8 @@ class DataExtractorThread(threading.Thread):
             self.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
+            self.core.validate(False)
+
         if not self.forced_exit:
             self.core.done()
 
@@ -77,10 +79,11 @@ class DataExtractorThread(threading.Thread):
 class OperationRefreshThread(threading.Thread):
     """Thread that executes a task every N seconds"""
 
-    def __init__(self, dataExtractor, core):
+    def __init__(self, dataExtractor, core, live_run):
         threading.Thread.__init__(self)
         self._finished = threading.Event()
         self.setDaemon(True)
+        self.live_run = live_run
         self._interval = 10
         self.core = core
         self.dataExtractor = dataExtractor
@@ -100,6 +103,8 @@ class OperationRefreshThread(threading.Thread):
         while 1:
             if self._finished.isSet(): return
             self.task()
+            # finish if just wanted to run once
+            if not self.live_run: return
             # sleep for interval or until shutdown
             self._finished.wait(self._interval)
 
@@ -115,10 +120,9 @@ class OperationRefreshThread(threading.Thread):
                                 # only compute/validate operation of aircraft which had a new guess from last validation
                                 for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
                                     if operation.get_op_timestamp():  # TODO why are some op_timestamp None?
-                                    #     # TODO make sure operations are properly computed... if one validation makes one op but then it/
-                                    #     # was another one, both remain instead of overwritting
                                         self.operation_dict[operation] = operation
-                            # TODO check for sid_star here
+                            # this will evaluate the waypoints (unefficient manner if it has to recompute all again)
+                            flight.get_sid_star(self.dataExtractor.extract_data.epoch_now)
 
             if not self.core.is_light_run:
                 self.display()
@@ -131,10 +135,7 @@ class OperationRefreshThread(threading.Thread):
         if len(op_list) > 2:
             op_list.sort()
             config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
-
-            config_list.sort(reverse=True)
             self.core.controller.update_tableConfig(config_list)
-            op_list.sort(reverse=True)
             # small efficiency trick
             self.core.controller.update_tableFlights(
                 op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list,
@@ -152,6 +153,7 @@ class Core:  # TODO does this have to be a class??
         self.operations_table_rows = 200
         self.console_text = ''
         self.is_light_run = False
+        self.live_run = False
         self.lock = threading.Lock()
         # queue to run functions from main thread
         self.q = Queue()
@@ -170,20 +172,25 @@ class Core:  # TODO does this have to be a class??
         self.controller.disable_run(True)
         if self.infiles and not self.dataExtractor:
             self.dataExtractor = DataExtractorThread(self.infiles, self)
-            self.operationRefresh = OperationRefreshThread(self.dataExtractor, self)
             dataExtractorThread = threading.Thread(target=self.dataExtractor.run, name='dataExtractor', args=())
-            operationRefreshThread = threading.Thread(target=self.operationRefresh.run, name='operationRefresh', args=())
             dataExtractorThread.start()
-            operationRefreshThread.start()
+            if self.live_run:
+                self.validate(self.live_run)
             self.controller.setHap('Running')
             self.controller.update_progressbar(0)
-            # self.event_loop()
+
+    def validate(self, live_run):
+        self.operationRefresh = OperationRefreshThread(self.dataExtractor, self, live_run)
+        operationRefreshThread = threading.Thread(target=self.operationRefresh.run, name='operationRefresh', args=())
+        operationRefreshThread.start()
+        self.controller.setHap('Validating')
 
     def stop(self):
         try:
             self.dataExtractor.shutdown()
-            self.operationRefresh.shutdown()
             self.dataExtractor = None
+            self.controller.setHap('Data extraction terminated')
+            self.operationRefresh.shutdown()
             self.operationRefresh = None
             print 'threads killed!',
             self.controller.setHap('Threads killed!')
@@ -212,6 +219,7 @@ class Core:  # TODO does this have to be a class??
         self.dataExtractor = None
         self.operationRefresh = None
         self.controller.setHap('Done')
+        # self.controller.update_progressbar(100)  # TODO this will hang the program!
         self.controller.disable_run(False)
 
     def set_controller(self, controller):
@@ -230,16 +238,6 @@ class Core:  # TODO does this have to be a class??
                                               get_file_name(self.dataExtractor.first_file))
         print 'logs saved'
         self.controller.print_console('logs saved')
-
-    # def event_loop(self):  # TODO this sucks...
-    #     while True:
-    #         try:
-    #             f, args, kwargs = self.q.get()
-    #             f(*args, **kwargs)
-    #             self.q.task_done()
-    #         except:
-    #             pass
-
 
 # core Class
 coreClass = Core()
