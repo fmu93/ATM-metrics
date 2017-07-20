@@ -1,5 +1,5 @@
 import numpy as np
-from p_tools import time_string
+from p_tools import datetime_string
 from aircraft_model import Aircraft
 from geo_resources import *
 from shapely.geometry import LineString
@@ -7,8 +7,8 @@ import time
 import threading
 
 time_between_waypoint = 60  # s
-guess_alt_ths = 1800  # [m] above airport to discard flyovers
-airport_altitude = 600  # [m]
+guess_alt_ths = 1800  # [m] ~5900 [ft] above airport to discard flyovers
+airport_altitude = 600  # [m] ~ 1970 [ft]
 
 
 class Metrics:
@@ -64,13 +64,13 @@ class Metrics:
             # print hour to console and update clock and progress bar in GUI
             if self.epoch_now % 3600 == 0:
                 if print_time:
-                    print time_string(self.epoch_now) + ' ...'
-                    self.dataExtractor.dispTime(time_string(self.epoch_now))
+                    print datetime_string(self.epoch_now) + ' ...'
+                    self.dataExtractor.dispTime(datetime_string(self.epoch_now))
                     print_time = False
                     # progress bar TODO should be queued for main thread to process or might hang
-                    # with self.lock1:
-                    #     self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
-                    #                                                           self.dataExtractor.num_lines)
+                    with self.lock1:
+                        self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
+                                                                              self.dataExtractor.num_lines)
             else:
                 print_time = True
 
@@ -96,7 +96,9 @@ class Metrics:
             current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
 
             # check if current line has velocity information and save it to the aircraft velocity buffer
+            # TODO this is not efficient since we store for all ac in or out of TMA. Better only for those known to be within TMA
             if str(data[8]) and str(data[9]) and str(data[10]):
+                # vrate, gs, ttrack
                 current_aircraft.set_new_vel(self.epoch_now, float(data[8]), float(data[9]), float(data[10]))
 
             # check if current line has kollsman value
@@ -119,14 +121,16 @@ class Metrics:
                 # only store previous points if we are interested in waypoints
                 if self.evaluate_waypoints:
                     current_aircraft.set_new_pos(self.epoch_now, pos.x, pos.y, alt_uncorrected)
-            # get a new line if now position information (we already checked for any other kind of valuable info)
+            # get a new line if no position information (we already checked for any other kind of valuable info)
             else:
                 continue
 
-            # detect waypoints. Efficient manner by making lines between periodical points TODO make more eff
+            # detect waypoints. Efficient manner by making lines between periodical points
+            # TODO make more efficient by categorizing waypoints sections
             if self.evaluate_waypoints:
                 line = None
                 if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
+                    # make line between current position and time_between_waypoint position, or up to 10 minutes
                     prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 360)
                     if prev_tbw_pos:
                         line = LineString([pos, (prev_tbw_pos.lon, prev_tbw_pos.lat)])

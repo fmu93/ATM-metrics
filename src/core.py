@@ -28,7 +28,6 @@ class DataExtractorThread(threading.Thread):
         self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
         self.extract_data = extract_data.Metrics(self)
         self.num_lines = 0
-        self.first_file = None
         self.file_count = 1
         self.forced_exit = False
         self.paused = False
@@ -56,8 +55,8 @@ class DataExtractorThread(threading.Thread):
 
         for timestamp in sortedDictKeys(self.infiles_dict):
             # display name of current database running
-            if not self.first_file:
-                self.first_file = self.infiles_dict[timestamp]
+            if not self.core.first_file_name:
+                self.core.first_file_name = self.infiles_dict[timestamp].name
             print self.infiles_dict[timestamp].name
             self.core.controller.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
@@ -88,7 +87,6 @@ class OperationRefreshThread(threading.Thread):
         self._interval = 10
         self.core = core
         self.dataExtractor = dataExtractor
-        self.operation_dict = {}
         self.paused = False
         self.lock = threading.Lock()
 
@@ -102,10 +100,13 @@ class OperationRefreshThread(threading.Thread):
 
     def run(self):
         while 1:
-            if self._finished.isSet(): return
+            if self._finished.isSet():
+                return
             self.task()
-            # finish if just wanted to run once
-            if not self.live_run: return
+            # finish if just wanted to run once and write analysis
+            if not self.live_run:
+                self.core.write_analysis()
+                return
             # sleep for interval or until shutdown
             self._finished.wait(self._interval)
 
@@ -121,8 +122,8 @@ class OperationRefreshThread(threading.Thread):
                                 # only compute/validate operation of aircraft which had a new guess from last validation
                                 for operation in flight.get_operations(self.dataExtractor.extract_data.epoch_now):
                                     if operation.get_op_timestamp():  # TODO why are some op_timestamp None?
-                                        self.operation_dict[operation] = operation
-                            # this will evaluate the waypoints (unefficient manner if it has to recompute all again)
+                                        self.core.operation_dict[operation] = operation
+                            # this will evaluate the waypoints (unefficient if it has to recompute all again while in "refresh" mode)
                             flight.get_sid_star(self.dataExtractor.extract_data.epoch_now)
 
             if not self.core.is_light_run:
@@ -130,7 +131,7 @@ class OperationRefreshThread(threading.Thread):
 
     def display(self):
         op_list = []
-        for op in (self.operation_dict.values()):
+        for op in (self.core.operation_dict.values()):
             if (not self.core.model_filter or (op.flight.aircraft.model in self.core.model_filter)) and\
                 (not self.core.airline_filter or (op.flight.aircraft.operator in self.core.airline_filter)) and\
                     (not self.core.config_filter or (op.config in self.core.config_filter)) and\
@@ -146,8 +147,8 @@ class OperationRefreshThread(threading.Thread):
             # small efficiency trick
             self.core.controller.update_tableFlights(
                 op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list,
-
                 self.dataExtractor.extract_data.epoch_now)
+
             self.core.controller.histo.update_figure(op_list, config_list)
 
 
@@ -159,8 +160,8 @@ class Core:  # TODO does this have to be a class??
         self.infiles = None
         self.operations_table_rows = 200
         self.console_text = ''
+        self.is_live_run = False
         self.is_light_run = False
-        self.live_run = False
         self.lock1 = threading.Lock()
         self.lock2 = threading.Lock()
         # queue to run functions from main thread TODO...
@@ -176,25 +177,30 @@ class Core:  # TODO does this have to be a class??
         self.config_filter = None
         self.start_filter = None
         self.end_filter = None
+        # results
+        self.operation_dict = {}
+        self.first_file_name = ''
 
     def run(self):
-        self.controller.disable_for_light(False)
-        self.is_light_run = False
+        # self.controller.disable_for_light(False)
+        self.is_live_run = False
         self.start_analysis()
 
-    def light_run(self):
-        self.controller.disable_for_light(True)
-        self.is_light_run = True
+    def live_run(self):
+        # self.controller.disable_for_light(True)
+        self.is_live_run = True
         self.start_analysis()
 
     def start_analysis(self):
+        self.operation_dict = {}
         self.controller.disable_run(True)
+        self.controller.disable_stop_pause(False)
         if self.infiles and not self.dataExtractor:
             self.dataExtractor = DataExtractorThread(self.infiles, self)
             dataExtractorThread = threading.Thread(target=self.dataExtractor.run, name='dataExtractor', args=())
             dataExtractorThread.start()
-            if self.live_run:
-                self.validate(self.live_run)
+            if self.is_live_run:
+                self.validate(self.is_live_run)
             self.controller.setHap('Running')
             with self.lock2:
                 self.controller.update_progressbar(0)
@@ -210,10 +216,10 @@ class Core:  # TODO does this have to be a class??
             self.dataExtractor.shutdown()
             self.dataExtractor = None
             self.controller.setHap('Data extraction terminated')
-            self.operationRefresh.shutdown()
-            self.operationRefresh = None
-            print 'threads killed!',
-            self.controller.setHap('Threads killed!')
+            if self.operationRefresh:
+                self.operationRefresh.shutdown()
+                self.operationRefresh = None
+                self.controller.setHap('Threads killed!')
             self.controller.update_progressbar(0)
         except Exception:
             print 'Can\'t kill threads'
@@ -223,27 +229,29 @@ class Core:  # TODO does this have to be a class??
     def pause(self):
         if self.dataExtractor.paused:
             self.dataExtractor.paused = False
-            self.operationRefresh.paused = False
+            if self.operationRefresh:
+                self.operationRefresh.paused = False
             self.controller.setHap('Running')
             self.controller.ui.btnPause.setText('Pause')
         else:
             self.dataExtractor.paused = True
-            self.operationRefresh.paused = True
+            if self.operationRefresh:
+                self.operationRefresh.paused = True
             self.controller.setHap('threads paused')
             self.controller.ui.btnPause.setText('Resume')
 
     def done(self):
         self.dataExtractor.shutdown()
         self.operationRefresh.shutdown()
-        self.write_analysis()
         self.dataExtractor = None
         self.controller.setHap('Done')
-        # self.controller.update_progressbar(100)  # TODO this will hang the program!
+        # self.controller.update_progressbar(100)  # TODO if set to 100 the program will hang!!!!
         self.controller.disable_run(False)
 
     def set_controller(self, controller):
         self.controller = controller
         self.controller.disable_run(True)
+        self.controller.disable_stop_pause(True)
 
     def make_display(self):
         if self.operationRefresh:
@@ -251,15 +259,12 @@ class Core:  # TODO does this have to be a class??
 
     def write_analysis(self):
         with self.lock1:
-            op_list = []
-            for op in self.operationRefresh.operation_dict.values():
-                op_list.append(op)
+            op_list = [op for op in self.operation_dict.values()]
             op_list.sort()
-            analysis.FlightsLog(os.path.dirname(self.dataExtractor.first_file.name),
-                                os.path.splitext(os.path.basename(self.dataExtractor.first_file.name))[0],
-                                op_list).write()
-            analysis.ConfigLog(op_list).write(os.path.dirname(self.dataExtractor.first_file.name),
-                                              get_file_name(self.dataExtractor.first_file))
+            analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name),
+                                               os.path.splitext(os.path.basename(self.first_file_name))[0])
+            analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name),
+                                              os.path.splitext(os.path.basename(self.first_file_name))[0])
         print 'logs saved'
         self.controller.print_console('logs saved')
 

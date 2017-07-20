@@ -8,7 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from p_tools import time_string
+from p_tools import datetime_string
 import controller
 import sys
 

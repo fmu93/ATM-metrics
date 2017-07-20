@@ -1,4 +1,4 @@
-from p_tools import icao_database, time_string, sortedDictKeys
+from p_tools import icao_database, datetime_string, sortedDictKeys
 from geo_resources import runway_ths_dict, all_wyp_seq, TMA
 from geopy.distance import great_circle
 from shapely.geometry import Point
@@ -30,7 +30,7 @@ class Aircraft:
         self.last_waypoint_check = 0
         self.buffer_time = 300  # s
         self.min_buffer_items = 4
-        self.not_an_aircraft = True  # TODO this is useful but can also be an ac taxiing around and days later it shows up as an aircraft
+        self.not_an_aircraft = True
 
     def set_call(self, new_call, epoch):
         if not self.flights_dict.keys():
@@ -309,8 +309,9 @@ class Operation:
                     if not self.possible_miss_time:  # so later we get position from this moment
                         self.possible_miss_time = epoch
                     self.miss_guess_count += 1
-                    if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
+                    if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+                        # TODO integrate ADS-B velocity messages, and containment on polygon past the runway
 
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
@@ -340,7 +341,7 @@ class Operation:
                     if not self.possible_miss_time:
                         self.possible_miss_time = epoch
                     self.miss_guess_count += 1
-                    if self.missed_detected is None and self.miss_guess_count > self.miss_guess_min:
+                    if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
 
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
@@ -475,7 +476,7 @@ class Operation:
         return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.model,
                 (self.flight.aircraft.operator if len(self.flight.aircraft.operator) <= 8 else self.flight.aircraft.operator[0:8]),
                 ('{:.0f}'.format(self.get_op_timestamp()) if self.get_op_timestamp() else 'None'),
-                time_string(self.runway_ths_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),
+                datetime_string(self.runway_ths_timestamp), '{:1}'.format(self.guess_count), '{:4.0f}'.format(self.get_mean_vrate()),
                 '{:3.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,
                 self.LorT,
@@ -558,13 +559,13 @@ class MissedApproach:
         self.timestamp = missed_time
         self.runway = self.operation.op_runway
         self.position = self.operation.flight.aircraft.get_position_delimited(self.timestamp, 0, 20)
-        self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff(epoch)  # TODO integrate generic diff
+        self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff(epoch)
         self.dist_to_ths = None
         for runway_ths_key in runway_ths_dict.keys():
             if self.runway in runway_ths_key:
                 self.dist_to_ths = great_circle((self.position.lon, self.position.lat),
                                                 (runway_ths_dict[runway_ths_key].x, runway_ths_dict[runway_ths_key].y)).nautical
                 break
-        self.operation.miss_comment = '(missed @ ' + time_string(self.timestamp) + ', ' + '{:1.0f}'.format(self.alt/0.3048) + ' ft, ' +\
+        self.operation.miss_comment = '(missed @ ' + datetime_string(self.timestamp) + ', ' + '{:1.0f}'.format(self.alt / 0.3048) + ' ft, ' +\
                                       '{:1.2f}'.format(self.dist_to_ths) + ' nm from ths) '
 

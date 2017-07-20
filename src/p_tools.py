@@ -2,11 +2,19 @@ import time
 import os
 
 
-def time_string(epoch):
+def datetime_string(epoch):
     "turns epoch time into a string: yyyy-mm-dd hh:mm:ss"
     if epoch is None:
         return "unknown_time"
     string = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(epoch)))
+    return string
+
+
+def time_string(epoch):
+    "turns epoch time into a string: hh:mm:ss"
+    if epoch is None:
+        return "unknown_time"
+    string = time.strftime('%H:%M:%S', time.gmtime(float(epoch)))
     return string
 
 

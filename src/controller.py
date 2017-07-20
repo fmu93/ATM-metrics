@@ -6,7 +6,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy as np
-from matplotlib.pyplot import xticks
 from p_tools import time_string
 import time
 
@@ -46,10 +45,10 @@ class Controller:
         self.ui.btnWrite.clicked.connect(self.core.write_analysis)
         self.ui.btnStop.clicked.connect(self.core.stop)
         self.ui.btnPause.clicked.connect(self.core.pause)
-        self.ui.btnLightRun.clicked.connect(self.core.light_run)
+        self.ui.btnLiveRun.clicked.connect(self.core.live_run)
         self.ui.checkBox_plotOff.stateChanged.connect(self.state_plot_off)
-        # self.ui.checkBox_stacked.stateChanged.connect(self.state_stacked)
-        # self.ui.checkBox_scrollable.stateChanged.connect(self.state_scrollable)  # TODO reenable
+        self.ui.comboBox_plotBin.currentIndexChanged.connect(self.handle_comboBox_binsize)
+        self.ui.checkBox_scrollable.stateChanged.connect(self.state_scrollable)
         self.ui.checkBox_labels.stateChanged.connect(self.state_labels)
         self.ui.checkBox_gridOn.stateChanged.connect(self.state_grid)
         self.ui.checkBox_alt_ths.stateChanged.connect(self.state_alt_ths)
@@ -63,13 +62,11 @@ class Controller:
         self.ui.comboBox_config.currentIndexChanged.connect(self.handle_comboBox_config)
         self.ui.checkBox_waypoints.stateChanged.connect(self.state_waypoints)
         self.ui.checkBox_liveRun.stateChanged.connect(self.state_live_run)
-        # self.ui.pushButton_resetFilter.clicked.connect(self.reset_filters)
-        # self.ui.checkBoxDelimit.stateChanged.connect(self.delimited_analysis)
-
+        self.ui.pushButton_resetFilter.clicked.connect(self.reset_filters)
+        self.ui.checkBoxDelimit.stateChanged.connect(self.delimited_analysis)
 
 
         # TODO state delimited timedate analysis
-
 
         # pallete
         self.color1 = QtGui.QColor('#F7F8F9')  # rest
@@ -91,7 +88,7 @@ class Controller:
 
     def close_application(self):
         self.core.stop()
-        sys.exit()  # TODO delete this lines
+        sys.exit()  # TODO without this line there will be a pop-up to close the application
         choice = QtWidgets.QMessageBox.question(self.ui.form, 'Exit box', "Exit program?",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
@@ -165,7 +162,11 @@ class Controller:
 
     def disable_run(self, bool):
         self.ui.btnRun.setDisabled(bool)
-        self.ui.btnLightRun.setDisabled(bool)
+        self.ui.btnLiveRun.setDisabled(bool)
+
+    def disable_stop_pause(self, bool):
+        self.ui.btnPause.setDisabled(bool)
+        self.ui.btnStop.setDisabled(bool)
 
     def disable_for_light(self, bool):
         self.ui.tabWidget.setDisabled(bool)
@@ -204,7 +205,7 @@ class Controller:
         self.print_console('scroll resize: ' + str(bool(checked)))
 
     def state_grid(self, checked):
-        self.ui.matplotlibWidget.set_grid(bool(checked))
+        self.ui.matplotlibWidget.grid_on = bool(checked)
         self.print_console('grid on: ' + str(bool(checked)))
 
     def state_labels(self, checked):
@@ -243,18 +244,18 @@ class Controller:
 
     def handle_airline_filter(self):
         if self.ui.lineEdit_filter_airline.isModified():
-            airline_filter_list = self.ui.lineEdit_filter_airline.text().strip(' ').upper().split(',')
+            airline_filter_list = [s.strip().upper() for s in self.ui.lineEdit_filter_airline.text().split(',')]
             self.core.airline_filter = airline_filter_list if airline_filter_list[0] else None
             self.core.make_display()
-            self.print_console("new airline filter set to: " + ','.join(airline_filter_list))
+            self.print_console("new airline filter set to: " + ', '.join(airline_filter_list))
         self.ui.lineEdit_filter_airline.setModified(False)
 
     def handle_model_filter(self):
         if self.ui.lineEdit_filter_model.isModified():
-            model_filter_list = self.ui.lineEdit_filter_model.text().strip(' ').upper().split(',')
+            model_filter_list = [s.strip().upper() for s in self.ui.lineEdit_filter_model.text().split(',')]
             self.core.model_filter = model_filter_list if model_filter_list[0] else None
             self.core.make_display()
-            self.print_console("new model filter set to: " + ','.join(model_filter_list))
+            self.print_console("new model filter set to: " + ', '.join(model_filter_list))
         self.ui.lineEdit_filter_model.setModified(False)
 
     def handle_analyseStart(self):
@@ -278,8 +279,13 @@ class Controller:
     def handle_comboBox_config(self):
         self.core.config_filter = comboBox_config_options[self.ui.comboBox_config.currentIndex()]
         self.core.make_display()
-        self.core.make_display()
         self.print_console("config filter set to: " + comboBox_config_options[self.ui.comboBox_config.currentIndex()])
+
+    def handle_comboBox_binsize(self):
+        self.ui.matplotlibWidget.binsize = int(comboBox_plotBin_options[self.ui.comboBox_plotBin.currentIndex()]) * 60
+        self.core.make_display()
+        self.print_console("histogram bin size set to: " + comboBox_plotBin_options[self.ui.comboBox_plotBin.currentIndex()] + " min")
+
 
     def reset_filters(self):
         self.core.airline_filter = None
@@ -288,6 +294,7 @@ class Controller:
         self.core.start_filter = None
         self.core.end_filter = None
         self.core.make_display()
+        self.print_console("reset filters and display")
 
 
 class MatplotlibWidget(QtWidgets.QWidget):
@@ -329,19 +336,19 @@ class MatplotlibWidget(QtWidgets.QWidget):
 
         self.bins = [1]
         self.binsize = 15*60  # min
-        self.max_y = self.binsize*1.2
-        self.plot_off = True
+        self.max_y = 0
+        self.plot_off = False
         self.scroll_resize = False
         self.show_labels = False
+        self.grid_on = True
         self.reset_fig()
-        self.axes.grid(True)
-
-    def set_grid(self, bool):
-        self.axes.grid(bool)
+        self.first_timestamp = None
 
     def reset_fig(self):
         self.axes.clear()
         self.axes.set_title('Dep/Arr', loc='center')
+        self.axes.grid(self.grid_on)
+        self.axes.set_xticklabels([''])
         self.resize_fig()
 
     def resize_fig(self):
@@ -356,51 +363,60 @@ class MatplotlibWidget(QtWidgets.QWidget):
                                             (self.scroll.height()-20) / float(dpi1))
                 self.canvas.resize(self.figure.get_figwidth()*float(dpi1), self.figure.get_figheight()*float(dpi1))
 
-    def update_figure(self, op_list, config_list):  # TODO x axis, adaptive labels and grid
-        if not self.plot_off:
+    def update_figure(self, op_list, config_list):
+        if not self.plot_off and op_list:
             self.reset_fig()
-            # operation histogram
-            # last_time = op_list[0].get_op_timestamp() - op_list[0].get_op_timestamp() % (self.binsize * 60)
-            dep = []
-            arr = []
-            for m, op in enumerate(op_list):
+            dep = [0]
+            arr = [0]
+            labels = ['']
+
+            if not self.first_timestamp: self.first_timestamp = op_list[-1].get_op_timestamp()
+
+            for op in reversed(op_list):
+                index = int((op.get_op_timestamp() - self.first_timestamp) / self.binsize)
+
+                if index >= len(labels):
+                    labels.extend([''] * (index - len(labels) + 1))  # TODO fill in gaps instead of ''
+                    dep.extend([0] * (index - len(dep) + 1))
+                    arr.extend([0] * (index - len(arr) + 1))
+
+                # fill labels in this index only once
+                if not labels[index]:
+                    labels[index] = time_string(op.get_op_timestamp() - (op.get_op_timestamp() % self.binsize))
+
                 if op.LorT == 'T':
-                    dep.append(op.get_op_timestamp())
+                    dep[index] += 1
                 elif op.LorT == 'L':
-                    arr.append(op.get_op_timestamp())
-            self.bins = np.arange(arr[0], arr[-1])
+                    arr[index] += 1
 
-            [n0, n1], bins2, patches = self.axes.hist([arr, dep], bins=self.bins, stacked=True, rwidth=0.9,
-                                                      color=['#9CB380', '#5CC8FF'], label=['arr', 'dep'])
-            if n1.any() and max(n1) > self.max_y:
-                self.max_y = max(n1)+2
-
-            # labels is an array of tick labels.
-            label_text = [time_string(loc) for loc in xticks()[0]]
-            self.axes.set_xticklabels(label_text)
-
-            self.axes.legend(loc=2)
+            N = len(labels)
+            self.bins = np.arange(N)
+            width = 0.8
+            # plot stacked bars
+            p1 = self.axes.bar(self.bins, arr, width, color='#9CB380')
+            p2 = self.axes.bar(self.bins, dep, width, bottom=arr, color='#5CC8FF')
+            # set labels and legend
+            self.axes.set_xticks(self.bins - 0.5)
+            self.axes.set_xticklabels(labels, rotation=-40)  # TODO make blanks when N is greater than.. 10
+            self.axes.legend((p2[0], p1[0]), ('Dep', 'Arr'), loc=0)
+            self.max_y = self.axes.get_ylim()[1]
+            self.axes.set_xlim(-1, N)
+            x_offset = 0.2
+            # set text
             if self.show_labels:
-                for m1, count1 in enumerate(n0):
-                    self.axes.text(self.bins[m1] + self.binsize*0.25, count1+self.max_y*0.02, '{:.0f}'.format(count1))
-                for m2, count2 in enumerate(n1):
-                    self.axes.text(self.bins[m2] + self.binsize*0.75, count2+self.max_y*0.02, '{:.0f}'.format(count2))
-
+                for m, label in enumerate(labels):
+                    if arr[m] != 0:
+                        self.axes.text(self.bins[m] - x_offset,
+                                       arr[m] + self.max_y*0.01, '{:.0f}'.format(arr[m]))
+                    if dep[m] != 0:
+                        self.axes.text(self.bins[m] + x_offset/2,
+                                       dep[m] + arr[m] + self.max_y*0.01, '{:.0f}'.format(dep[m]))
             # config changes vertical lines
             for m, config in enumerate(config_list):
-                self.axes.plot([config.from_epoch]*2, [0, 0.85*self.max_y], 'b--', linewidth=1)
-                self.axes.text(config.from_epoch-self.binsize*0.2, self.max_y*0.9, config.config)
-
-            # line of mean horizontal line (per day)
-            avg = np.average(n1)
-            self.axes.plot(self.bins, [avg] * len(self.bins), 'k--', linewidth=0.6)
-            self.prop.setText("\tBin size is: " + '{:d}'.format(self.binsize) + " min\t"
-                              "Average throughput per bin: " + '{:.1f}'.format(avg))
-
+                x = float((config.from_epoch - self.first_timestamp) / self.binsize)
+                self.axes.plot([x]*2, [0, 0.9*self.max_y], 'b--', linewidth=1)
+                self.axes.text(x + x_offset, self.max_y*0.9, config.config, fontsize=16)
             # show plot
-            self.axes.set_xticks(self.bins)
-            self.axes.set_xlim([0, self.bins[-1]+self.binsize])
-            self.axes.set_ylim([0, self.max_y])
             self.canvas.draw()
 
 

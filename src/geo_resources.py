@@ -216,7 +216,7 @@ point_WYP_SSY = Point((-3.57528, 40.54639))
 poly_WYP_SSY = point_WYP_SSY.buffer(wyp_radius/2)
 waypoints_dict['SSY'] = poly_WYP_SSY
 
-point_WYP_BRA = Point((-3.55773, 40.46914))  # TODO this is not needed
+point_WYP_BRA = Point((-3.55773, 40.46914))  # TODO this is possibly not needed
 poly_WYP_BRA = point_WYP_BRA.buffer(wyp_radius/4)
 waypoints_dict['BRA'] = poly_WYP_BRA
 

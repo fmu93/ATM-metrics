@@ -1,4 +1,4 @@
-from p_tools import time_string, duration_string
+from p_tools import datetime_string, duration_string
 from operator import itemgetter
 import time
 
@@ -6,20 +6,18 @@ import time
 class FlightsLog:
     '''writes into file the final_guess_list of the operation analysis'''
 
-    def __init__(self, path, name, final_op_list):
-        self.path = path
-        self.name = name
+    def __init__(self, final_op_list):
         self.final_op_list = final_op_list
 
-    def write(self):
-        log_file_name = '%s\\%s_flightsLog.txt' % (self.path, self.name)
+    def write(self, path, name,):
+        log_file_name = '%s\\%s_flightsLog.txt' % (path, name)
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
             guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\t(deg)\t"\
             "track\trunway\tchange_comment\tmiss_comment\top_comment\tSID/STAR\twaypoints\n")
             for operation in self.final_op_list:
-                date = time_string(operation.get_op_timestamp())
+                date = datetime_string(operation.get_op_timestamp())
                 hour = time.gmtime(operation.get_op_timestamp()).tm_hour
                 if hour - prev_hour != 0:
                     guess_log_file.write('\n')
@@ -54,12 +52,12 @@ class ConfigLog:
             self.config_list[-1].slack = from_epoch - self.config_list[-1].until_epoch
         self.config_list.append(Config(config, from_epoch, until_epoch, runway_list, missed, slack))
 
-    def write(self, path, master_name):
-        log_file_name = '%s\\%s_configLog.txt' % (path, master_name)
+    def write(self, path, name):
+        log_file_name = '%s\\%s_configLog.txt' % (path, name)
         config_head = "From time\t\t\tUntil time\t\t\tDur(h)\tCon\tTot\t"
         for op in self.ops:
             config_head += op + '\t'
-        config_head += 'mis\tSlack capacity(min)\n'
+        config_head += 'mis\tSlack capacity\n'
 
         self.run()
         string = ''
@@ -97,16 +95,16 @@ class ConfigLog:
             for operation in self.final_op_list:
                 op_timestamp = operation.get_op_timestamp()
 
-                if op_timestamp and prev_op:
+                if op_timestamp:
                     if operation.config == 'N':  # now NORTH
-                        if prev_op.config == 'S':  # prev south
+                        if prev_op and prev_op.config == 'S':  # prev south
                             until_epoch = prev_timestamp
                             log = True
                             config = 'S'
                             last_config = 'N'
 
                     elif operation.config == 'S':  # now SOUTH
-                        if prev_op.config == 'N':  # prev north
+                        if prev_op and prev_op.config == 'N':  # prev north
                             until_epoch = prev_timestamp
                             log = True
                             config = 'N'
@@ -120,15 +118,13 @@ class ConfigLog:
                         log = False
                         from_epoch = op_timestamp
 
-                    try:
-                        total_count += 1
+                    total_count += 1
+                    if operation.op_runway:  # can happen that no enough guesses to determine a runway
                         counter[self.ops.index(operation.op_runway)] += 1
-                        # for the misses, we could do it per known missed since we detected the second approach
-                        # or per detected missed itself, which may not be a missed in the end
-                        if operation.flight.has_missed_app:
-                            miss_count += 1
-                    except Exception:
-                        print 'error in op_timestamp, type: ' + type(op_timestamp)  # doesnt make sense this here...
+                    # for the misses, we could do it per known missed since we detected the second approach
+                    # or per detected missed itself, which may not be a missed in the end
+                    if operation.flight.has_missed_app:
+                        miss_count += 1
 
                 prev_timestamp = operation.get_op_timestamp()
                 prev_op = operation
@@ -152,7 +148,7 @@ class Config:
         return self.from_epoch < other.from_epoch
 
     def listed(self):
-        return [time_string(self.from_epoch), time_string(self.until_epoch), duration_string(self.duration),
+        return [datetime_string(self.from_epoch), datetime_string(self.until_epoch), duration_string(self.duration),
                 self.config, '{:d}'.format(sum(self.runway_list)), '{:d}'.format(self.runway_list[0]),
                 '{:d}'.format(self.runway_list[1]), '{:d}'.format(self.runway_list[2]),
                 '{:d}'.format(self.runway_list[3]), '{:d}'.format(self.runway_list[4]),
