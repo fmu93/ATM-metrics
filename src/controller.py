@@ -61,12 +61,10 @@ class Controller:
         self.ui.dateTimeEdit_filterEnd.dateTimeChanged.connect(self.handle_filterEnd)
         self.ui.comboBox_config.currentIndexChanged.connect(self.handle_comboBox_config)
         self.ui.checkBox_waypoints.stateChanged.connect(self.state_waypoints)
-        self.ui.checkBox_liveRun.stateChanged.connect(self.state_live_run)
         self.ui.pushButton_resetFilter.clicked.connect(self.reset_filters)
         self.ui.checkBoxDelimit.stateChanged.connect(self.delimited_analysis)
-
-
-        # TODO state delimited timedate analysis
+        self.ui.spinBoxRate.valueChanged.connect(self.handle_refreshRate)
+        self.ui.lineEdit_outName.editingFinished.connect(self.handle_out_filename)
 
         # pallete
         self.color1 = QtGui.QColor('#F7F8F9')  # rest
@@ -100,7 +98,6 @@ class Controller:
 
     def openFileNamesDialog(self):
         options = QtWidgets.QFileDialog.Options()
-        # options |= QtWidgets.QFileDialog.DontUseNativeDialog
         files, _ = QtWidgets.QFileDialog.getOpenFileNames(self.ui.form, "QFileDialog.getOpenFileNames()",
                                                           "", "All Files (*);;Hexx Files (*.hex)", options=options)
         if files:
@@ -224,10 +221,6 @@ class Controller:
         self.core.evaluate_waypoints = bool(checked)
         self.print_console('evaluate waypoints: ' + str(bool(checked)))
 
-    def state_live_run(self, checked):
-        self.core.live_run = bool(checked)
-        self.print_console('is live run: ' + str(bool(checked)))
-
     def print_console(self, new_text):
         self.core.console_text += new_text + '\n'
         self.ui.console.setPlainText(self.core.console_text)
@@ -241,6 +234,12 @@ class Controller:
             except Exception:
                 self.print_console("[error] new altitude threshold for timestamp: only integers please")
         self.ui.lineEdit_alt_ths.setModified(False)
+
+    def handle_out_filename(self):
+        if self.ui.lineEdit_outName.isModified():
+            self.core.out_name = self.ui.lineEdit_outName.text()
+            self.print_console("out file name set to: " + self.ui.lineEdit_outName.text())
+        self.ui.lineEdit_outName.setModified(False)
 
     def handle_airline_filter(self):
         if self.ui.lineEdit_filter_airline.isModified():
@@ -286,7 +285,6 @@ class Controller:
         self.core.make_display()
         self.print_console("histogram bin size set to: " + comboBox_plotBin_options[self.ui.comboBox_plotBin.currentIndex()] + " min")
 
-
     def reset_filters(self):
         self.core.airline_filter = None
         self.core.model_filter = None
@@ -295,6 +293,10 @@ class Controller:
         self.core.end_filter = None
         self.core.make_display()
         self.print_console("reset filters and display")
+
+    def handle_refreshRate(self):
+        self.core.refreshRate = int(self.ui.spinBoxRate.value())
+        self.print_console("refresh rate for live run set to: " + str(self.ui.spinBoxRate.value()))
 
 
 class MatplotlibWidget(QtWidgets.QWidget):
@@ -368,21 +370,19 @@ class MatplotlibWidget(QtWidgets.QWidget):
             self.reset_fig()
             dep = [0]
             arr = [0]
-            labels = ['']
+            labels = []
 
             if not self.first_timestamp: self.first_timestamp = op_list[-1].get_op_timestamp()
 
             for op in reversed(op_list):
                 index = int((op.get_op_timestamp() - self.first_timestamp) / self.binsize)
-
+                # fill in labels and empty values for new bars
                 if index >= len(labels):
-                    labels.extend([''] * (index - len(labels) + 1))  # TODO fill in gaps instead of ''
+                    for m in reversed(range(index - len(labels) + 1)):
+                        bin_time = op.get_op_timestamp() - m*self.binsize
+                        labels.append(time_string(bin_time - (bin_time % self.binsize)))
                     dep.extend([0] * (index - len(dep) + 1))
                     arr.extend([0] * (index - len(arr) + 1))
-
-                # fill labels in this index only once
-                if not labels[index]:
-                    labels[index] = time_string(op.get_op_timestamp() - (op.get_op_timestamp() % self.binsize))
 
                 if op.LorT == 'T':
                     dep[index] += 1
@@ -397,6 +397,14 @@ class MatplotlibWidget(QtWidgets.QWidget):
             p2 = self.axes.bar(self.bins, dep, width, bottom=arr, color='#5CC8FF')
             # set labels and legend
             self.axes.set_xticks(self.bins - 0.5)
+            if len(labels) > 10:
+                i = 0
+                one_label_per = len(labels) / 15
+                for m, label in enumerate(labels):
+                    if i > 0:
+                        labels[m] = ''
+                    i += 1
+                    if i > one_label_per: i = 0
             self.axes.set_xticklabels(labels, rotation=-40)  # TODO make blanks when N is greater than.. 10
             self.axes.legend((p2[0], p1[0]), ('Dep', 'Arr'), loc=0)
             self.max_y = self.axes.get_ylim()[1]

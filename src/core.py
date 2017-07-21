@@ -66,7 +66,7 @@ class DataExtractorThread(threading.Thread):
             self.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
-            # validate when finished
+            # validate when finished with each file
             self.core.validate(False)
 
         if not self.forced_exit:
@@ -84,7 +84,6 @@ class OperationRefreshThread(threading.Thread):
         self._finished = threading.Event()
         self.setDaemon(True)
         self.live_run = live_run
-        self._interval = 10
         self.core = core
         self.dataExtractor = dataExtractor
         self.paused = False
@@ -108,7 +107,7 @@ class OperationRefreshThread(threading.Thread):
                 self.core.write_analysis()
                 return
             # sleep for interval or until shutdown
-            self._finished.wait(self._interval)
+            self._finished.wait(self.core.refreshRate)
 
     def task(self):
         if not self.paused:
@@ -162,6 +161,7 @@ class Core:  # TODO does this have to be a class??
         self.console_text = ''
         self.is_live_run = False
         self.is_light_run = False
+        self.refreshRate = 5
         self.lock1 = threading.Lock()
         self.lock2 = threading.Lock()
         # queue to run functions from main thread TODO...
@@ -180,6 +180,8 @@ class Core:  # TODO does this have to be a class??
         # results
         self.operation_dict = {}
         self.first_file_name = ''
+        # out files
+        self.out_name = ''
 
     def run(self):
         # self.controller.disable_for_light(False)
@@ -209,7 +211,6 @@ class Core:  # TODO does this have to be a class??
         self.operationRefresh = OperationRefreshThread(self.dataExtractor, self, live_run)
         operationRefreshThread = threading.Thread(target=self.operationRefresh.run, name='operationRefresh', args=())
         operationRefreshThread.start()
-        self.controller.setHap('Validating')
 
     def stop(self):
         try:
@@ -259,12 +260,15 @@ class Core:  # TODO does this have to be a class??
 
     def write_analysis(self):
         with self.lock1:
+            if self.out_name:
+                out_name = self.out_name
+            else:
+                out_name = os.path.splitext(os.path.basename(self.first_file_name))[0]
+
             op_list = [op for op in self.operation_dict.values()]
             op_list.sort()
-            analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name),
-                                               os.path.splitext(os.path.basename(self.first_file_name))[0])
-            analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name),
-                                              os.path.splitext(os.path.basename(self.first_file_name))[0])
+            analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
+            analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
         print 'logs saved'
         self.controller.print_console('logs saved')
 
