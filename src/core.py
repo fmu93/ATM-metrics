@@ -259,18 +259,21 @@ class Core:  # TODO does this have to be a class??
             self.operationRefresh.display()
 
     def write_analysis(self):
-        with self.lock1:
-            if self.out_name:
-                out_name = self.out_name
-            else:
-                out_name = os.path.splitext(os.path.basename(self.first_file_name))[0]
+        if not self.operationRefresh:
+            self.validate(False)
+        else:
+            with self.lock1:
+                if self.out_name:
+                    out_name = self.out_name
+                else:
+                    out_name = os.path.splitext(os.path.basename(self.first_file_name))[0]
 
-            op_list = [op for op in self.operation_dict.values()]
-            op_list.sort()
-            analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
-            analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
-        print 'logs saved'
-        self.controller.print_console('logs saved')
+                op_list = [op for op in self.operation_dict.values()]
+                op_list.sort()
+                analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
+                analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
+            print 'logs saved'
+            self.controller.print_console('logs saved')
 
 # core Class
 coreClass = Core()

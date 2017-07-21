@@ -7,7 +7,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import numpy as np
 from p_tools import time_string
-import time
+import calendar
 
 flight_headers = ['call', 'icao', 'type', 'operator', 'opTimestamp','opTimestampDate','#pos','V(fpm)','GS(kts)','(deg)',
                   'track','runway', 'L/TO', 'change_comm','miss_comm','op_comm', 'SID/STAR']
@@ -258,20 +258,20 @@ class Controller:
         self.ui.lineEdit_filter_model.setModified(False)
 
     def handle_analyseStart(self):
-        self.core.analyseStart = time.mktime(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime().timetuple())
+        self.core.analyseStart = calendar.timegm(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime().timetuple())
         self.print_console("new analyse start set to: " + str(self.ui.dateTimeEdit_analyseStart.dateTime().toPyDateTime()))
 
     def handle_analyseEnd(self):
-        self.core.analyseEnd = time.mktime(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime().timetuple())
+        self.core.analyseEnd = calendar.timegm(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime().timetuple())
         self.print_console("new analyse end set to: " + str(self.ui.dateTimeEdit_analyseEnd.dateTime().toPyDateTime()))
 
     def handle_filterStart(self):
-        self.core.start_filter = time.mktime(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime().timetuple())
+        self.core.start_filter = calendar.timegm(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime().timetuple())
         self.core.make_display()
         self.print_console("new filter start set to: " + str(self.ui.dateTimeEdit_filterStart.dateTime().toPyDateTime()))
 
     def handle_filterEnd(self):
-        self.core.end_filter = time.mktime(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime().timetuple())
+        self.core.end_filter = calendar.timegm(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime().timetuple())
         self.core.make_display()
         self.print_console("new filter end set to: " + str(self.ui.dateTimeEdit_filterEnd.dateTime().toPyDateTime()))
 
@@ -388,6 +388,7 @@ class MatplotlibWidget(QtWidgets.QWidget):
                     dep[index] += 1
                 elif op.LorT == 'L':
                     arr[index] += 1
+            print index, len(labels)
 
             N = len(labels)
             self.bins = np.arange(N)

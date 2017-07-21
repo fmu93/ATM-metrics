@@ -7,6 +7,7 @@ use_alt_ths_timestamp = False
 no_call = 'no_call'
 airport_altitude = 600  # [m]
 alt_threshold = airport_altitude + 800  # TODO make different alt thresholds for approach and take off
+missed_alt_threshold = 91  # [m] 300 [ft], altitude above runway to detect missed approach
 
 
 class Aircraft:
@@ -242,9 +243,10 @@ class Operation:
         self.zone_change_comment = ''
         self.miss_comment = ''
         self.missed_detected = None
-        self.miss_inclin_ths = 1
+        self.miss_inclin_ths = 1  # deg
         self.possible_miss_time = None
         self.miss_guess_count = 0
+        self.not_miss_guess_count = 0
         self.miss_guess_min = 10
 
     def __lt__(self, other):
@@ -300,18 +302,32 @@ class Operation:
                 elif EorW == 'E':
                     side = 'L'
                 if UorD == 'D':
-                    # normal 18 op
-                    self.miss_guess_count = 0
-                    self.possible_miss_time = None
-                    self.missed_detected = None
-                    pass
+                    # normal 18 op. Discard missed op if several positions still going downwards after missed_detected
+                    if self.missed_detected:
+                        self.not_miss_guess_count += 1
+                        if self.not_miss_guess_count > self.miss_guess_min:
+                            self.miss_guess_count = 0
+                            self.possible_miss_time = None
+                            self.missed_detected = None
+
+                # handle possible missed approach
                 elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
                     if not self.possible_miss_time:  # so later we get position from this moment
                         self.possible_miss_time = epoch
                     self.miss_guess_count += 1
                     if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
-                        # TODO integrate ADS-B velocity messages, and containment on polygon past the runway
+                        self.not_miss_guess_count = 0
+                if self.missed_detected and zone == 0:
+                    position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
+                    alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
+                    # aircraft flying below 300 ft (91 m) at zone 0 (runway)
+                    if alt > airport_altitude + missed_alt_threshold and not self.missed_detected:
+                        self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+                    else:
+                        self.miss_guess_count = 0
+                        self.possible_miss_time = None
+                        self.missed_detected = None
 
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
@@ -332,17 +348,31 @@ class Operation:
                 elif EorW == 'E':
                     side = 'R'
                 if UorD == 'D':
-                    # normal 32 op
-                    self.miss_guess_count = 0
-                    self.possible_miss_time = None
-                    self.missed_detected = None
-                    pass
-                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:  # TODO check
-                    if not self.possible_miss_time:
+                    # normal 32 op. Discard missed op if several positions still going downwards after missed_detected
+                    if self.missed_detected:
+                        self.not_miss_guess_count += 1
+                        if self.not_miss_guess_count > self.miss_guess_min:
+                            self.miss_guess_count = 0
+                            self.possible_miss_time = None
+                            self.missed_detected = None
+
+                # handle possible missed approach
+                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
+                    if not self.possible_miss_time:  # so later we get position from this moment
                         self.possible_miss_time = epoch
                     self.miss_guess_count += 1
                     if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+                        self.not_miss_guess_count = 0
+                if self.missed_detected and zone == 0:
+                    position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
+                    alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
+                    # aircraft flying below 300 ft (91 m) at zone 0 (runway)
+                    if alt > airport_altitude + missed_alt_threshold and not self.missed_detected:
+                        self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+                    else:
+                        self.miss_guess_count = 0
+                        self.missed_detected = None
 
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
                 self.IorO = 'O'
