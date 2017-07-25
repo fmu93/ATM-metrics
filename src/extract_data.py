@@ -6,12 +6,11 @@ from shapely.geometry import LineString
 import time
 import threading
 
-time_between_waypoint = 60  # s
-guess_alt_ths = 1800  # [m] ~5900 [ft] above airport to discard flyovers
-airport_altitude = 600  # [m] ~ 1970 [ft]
-
 
 class Metrics:
+    time_between_waypoint = 60  # s
+    guess_alt_ths = 1800  # [m] ~5900 [ft] above airport to discard flyovers
+    airport_altitude = 600  # [m] ~ 1970 [ft]
 
     def __init__(self, dataExtractor):
         self.dataExtractor = dataExtractor
@@ -23,6 +22,7 @@ class Metrics:
         self.analyseStart = self.dataExtractor.core.analyseStart
         self.analyseEnd = self.dataExtractor.core.analyseEnd
         self.lock1 = threading.Lock()
+        self.lock2 = threading.Lock()
 
     def run(self, key_timestamp, infile, icao_filter):
         # Open database
@@ -66,9 +66,10 @@ class Metrics:
                 if print_time:
                     print datetime_string(self.epoch_now) + ' ...'
                     print_time = False
-                    self.dataExtractor.dispTime(datetime_string(self.epoch_now))
-                    # progress bar TODO should be queued for main thread to process or might hang
-                    self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
+                    with self.lock2:
+                        self.dataExtractor.dispTime(datetime_string(self.epoch_now))
+                        # progress bar TODO should be queued for main thread to process or might hang
+                        self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
                                                                           self.dataExtractor.num_lines)
             else:
                 print_time = True
@@ -115,7 +116,7 @@ class Metrics:
                     FL = float(data[6])
                     alt_uncorrected = FL * 30.48  # m, no QNH correction
                 elif data[7]:  # ground boolean
-                    alt_uncorrected = airport_altitude  # ground position. Will be corrected but doesn't really matter
+                    alt_uncorrected = Metrics.airport_altitude  # ground position. Will be corrected but doesn't really matter
                     FL = 20
                 # only store previous points if we are interested in waypoints
                 if self.evaluate_waypoints:
@@ -129,9 +130,9 @@ class Metrics:
             if self.evaluate_waypoints:
                 current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
                 line = None
-                if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
+                if self.epoch_now - current_aircraft.last_waypoint_check >= Metrics.time_between_waypoint:
                     # make line between current position and time_between_waypoint position, or up to 10 minutes
-                    prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, time_between_waypoint, 360)
+                    prev_tbw_pos = current_aircraft.get_position_delimited(self.epoch_now, Metrics.time_between_waypoint, 360)
                     if prev_tbw_pos:
                         line = LineString([pos, (prev_tbw_pos.lon, prev_tbw_pos.lat)])
                 if line:
@@ -176,7 +177,7 @@ class Metrics:
                     elif poly_NW.contains(pos):
                         current_flight.set_guess(self.epoch_now, 'N', 'W', ttrack, vrate, inclin, gs, 4)
 
-                    if alt_uncorrected <= guess_alt_ths + airport_altitude:
+                    if alt_uncorrected <= Metrics.guess_alt_ths + Metrics.airport_altitude:
                         if poly_north.contains(pos):
                             NorS = 'N'
                             if poly_AA.contains(pos):

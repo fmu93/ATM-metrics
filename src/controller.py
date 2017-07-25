@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 import numpy as np
 from p_tools import time_string
 import calendar
+import threading
 
 flight_headers = ['call', 'icao', 'type', 'operator', 'opTimestamp','opTimestampDate','#pos','V(fpm)','GS(kts)','(deg)',
                   'track','runway', 'L/TO', 'change_comm','miss_comm','op_comm', 'SID/STAR']
@@ -22,6 +23,7 @@ class Controller:
         self.core = core.coreClass
         self.ui = ui
         self.core.set_controller(self)
+        self.lock1 = threading.Lock()
 
         # table
         self.ui.tableFlights.setColumnCount(17)
@@ -215,7 +217,7 @@ class Controller:
         self.print_console('labels on: ' + str(bool(checked)))
 
     def state_alt_ths(self, checked):
-        aircraft_model.use_alt_ths_timestamp = bool(checked)
+        aircraft_model.Operation.use_alt_ths_timestamp = bool(checked)
         self.print_console('alt ths timestamp: ' + str(bool(checked)))
 
     def state_plot_off(self, checked):
@@ -227,8 +229,9 @@ class Controller:
         self.print_console('evaluate waypoints: ' + str(bool(checked)))
 
     def print_console(self, new_text):
-        self.core.console_text += new_text + '\n'
-        self.ui.console.setPlainText(self.core.console_text)
+        with self.lock1:
+            self.core.console_text += new_text + '\n'
+            self.ui.console.setPlainText(self.core.console_text)
 
     def write_analysis(self):
         self.core.write_analysis(True)
@@ -237,7 +240,7 @@ class Controller:
         if self.ui.lineEdit_alt_ths.isModified():
             new_alt_ths = self.ui.lineEdit_alt_ths.text()
             try:
-                aircraft_model.alt_threshold = int(new_alt_ths)*0.3048  # input is in feet
+                aircraft_model.Operation.alt_threshold = int(new_alt_ths)*0.3048  # input is in feet
                 self.print_console("new altitude threshold for timestamp: " + str(new_alt_ths) + " feet")
             except Exception:
                 self.print_console("[error] new altitude threshold for timestamp: only integers please")

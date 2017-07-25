@@ -7,10 +7,6 @@ import analysis
 from p_tools import sortedDictKeys, get_file_name
 from Queue import Queue
 
-no_call = 'no_call'
-airport_altitude = 600  # [m]
-guess_alt_ths = 1800  # [m] above airport to discard flyovers
-
 
 class DataExtractorThread(threading.Thread):
     def __init__(self, infiles, core):
@@ -45,7 +41,7 @@ class DataExtractorThread(threading.Thread):
                     # dict of files with first timestamp as key
                     self.infiles_dict[first_timestamp] = infile
                     self.num_lines += sum(1.0 for line in database)
-                except:
+                except Exception:
                     print 'Error in file: ' + infile.name
                     self.core.controller.print_console('Error in file: ' + infile.name)
 
@@ -57,8 +53,8 @@ class DataExtractorThread(threading.Thread):
             self.core.controller.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
                                                get_file_name(self.infiles_dict[timestamp])))
-            # icao_filter = '343147'
-            icao_filter = None
+            icao_filter = '343147'
+            # icao_filter = None
             self.core.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1

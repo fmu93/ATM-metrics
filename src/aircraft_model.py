@@ -3,11 +3,8 @@ from geo_resources import runway_ths_dict, all_wyp_seq, TMA
 from geopy.distance import great_circle
 from shapely.geometry import Point
 
-use_alt_ths_timestamp = True
 no_call = 'no_call'
 airport_altitude = 600  # [m]
-alt_threshold = 914  # [m], 3000 ft  TODO make different alt thresholds for approach and take off
-missed_alt_threshold = 91  # [m] 300 [ft], altitude above runway to detect missed approach
 
 
 class Aircraft:
@@ -217,6 +214,10 @@ class Flight:
 
 
 class Operation:
+    use_alt_ths_timestamp = True
+    alt_threshold = 914  # [m] 3000 ft
+    missed_alt_threshold = 91  # [m] 300 [ft], altitude above runway to detect missed approach
+
     def __init__(self, flight):
         self.flight = flight
         self.op_guess_dict = {}
@@ -237,7 +238,6 @@ class Operation:
         self.runway_ths_timestamp = None
         self.pref = None
         self.alt_ths_timestamp = None
-        self.threshold = alt_threshold  # [m]     airport_altitude + 600  # m
         self.op_runway = ''
         self.op_comment = ''
         self.zone_change_comment = ''
@@ -320,7 +320,7 @@ class Operation:
                     position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
                     alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
                     # aircraft flying below 300 ft (91 m) at zone 0 (runway)
-                    if alt > airport_altitude + missed_alt_threshold and not self.missed_detected:
+                    if alt > airport_altitude + Operation.missed_alt_threshold and not self.missed_detected:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
                     else:
                         self.miss_guess_count = 0
@@ -366,7 +366,7 @@ class Operation:
                     position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
                     alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
                     # aircraft flying below 300 ft (91 m) at zone 0 (runway)
-                    if alt > airport_altitude + missed_alt_threshold and not self.missed_detected:
+                    if alt > airport_altitude + Operation.missed_alt_threshold and not self.missed_detected:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
                     else:
                         self.miss_guess_count = 0
@@ -405,12 +405,12 @@ class Operation:
             self.runway_ths_timestamp = epoch
 
     def set_alt_ths_timestamp(self, epoch_now, prev_epoch, alt, prev_alt, half):
-        if alt > self.threshold > prev_alt or alt < self.threshold < prev_alt:
+        if alt > Operation.alt_threshold > prev_alt or alt < Operation.alt_threshold < prev_alt:
             self.alt_ths_timestamp = round(
-                prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (self.threshold - prev_alt))
+                prev_epoch + (epoch_now - prev_epoch) / (alt - prev_alt) * (Operation.alt_threshold - prev_alt))
 
     def get_op_timestamp(self):
-        return self.alt_ths_timestamp if use_alt_ths_timestamp else self.runway_ths_timestamp
+        return self.alt_ths_timestamp if Operation.use_alt_ths_timestamp else self.runway_ths_timestamp
 
     def validate_operation(self, epoch):
         north_zones = [None, None, None, None, None]  # [Zone0, ...]
