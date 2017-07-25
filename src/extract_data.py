@@ -65,12 +65,11 @@ class Metrics:
             if self.epoch_now % 3600 == 0:
                 if print_time:
                     print datetime_string(self.epoch_now) + ' ...'
-                    self.dataExtractor.dispTime(datetime_string(self.epoch_now))
                     print_time = False
+                    self.dataExtractor.dispTime(datetime_string(self.epoch_now))
                     # progress bar TODO should be queued for main thread to process or might hang
-                    with self.lock1:
-                        self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
-                                                                              self.dataExtractor.num_lines)
+                    self.dataExtractor.core.controller.update_progressbar(100 * self.line_count /
+                                                                          self.dataExtractor.num_lines)
             else:
                 print_time = True
 
@@ -79,7 +78,8 @@ class Metrics:
                 continue
 
             # get the icao_dict where aircraft model is and get the current aircraft
-            icao_dict = self.dataExtractor.files_data_dict[key_timestamp]
+            with self.lock1:
+                icao_dict = self.dataExtractor.core.files_data_dict[key_timestamp]
             if icao0 not in icao_dict.keys():
                 icao_dict[icao0] = Aircraft(icao0, self.epoch_now)
             current_aircraft = icao_dict[icao0]
@@ -93,7 +93,6 @@ class Metrics:
                     self.dataExtractor.call_icao_list.append(call+icao0)
                 else:
                     current_aircraft.set_call(call, self.epoch_now)  # already fixes unknown call to op_timestamp
-            current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
 
             # check if current line has velocity information and save it to the aircraft velocity buffer
             # TODO this is not efficient since we store for all ac in or out of TMA. Better only for those known to be within TMA
@@ -128,6 +127,7 @@ class Metrics:
             # detect waypoints. Efficient manner by making lines between periodical points
             # TODO make more efficient by categorizing waypoints sections
             if self.evaluate_waypoints:
+                current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
                 line = None
                 if self.epoch_now - current_aircraft.last_waypoint_check >= time_between_waypoint:
                     # make line between current position and time_between_waypoint position, or up to 10 minutes
@@ -144,6 +144,7 @@ class Metrics:
             if pos and FL and alt_uncorrected and FL < 130 and airport_poly.contains(pos):
                 # store prev positions only inside TMA if not interested in waypoints
                 if not self.evaluate_waypoints:
+                    current_flight = current_aircraft.get_current_flight()  # will be no_call flight if new
                     current_aircraft.set_new_pos(self.epoch_now, pos.x, pos.y, alt_uncorrected)
 
                 NorS = None
@@ -155,7 +156,7 @@ class Metrics:
                     vrate = prev_vel.vrate  # fpm
                     gs = prev_vel.gs  # knots
                     if gs == 0:
-                        continue  # TODO what is this?
+                        continue  # TODO: what?
                     ttrack = prev_vel.ttrack  # [0 , 360]
                     ttrack = ttrack % 360
                     inclin = np.rad2deg(np.arctan(vrate / gs * 0.0098748))
@@ -166,7 +167,7 @@ class Metrics:
                     #  \ C0 - \ D0
                     #   \ C1 - \ D1
 
-                    if poly_SE.contains(pos):  # will only be used for approaches
+                    if poly_SE.contains(pos):  # ZONE 4, will only be useful for approaches
                         current_flight.set_guess(self.epoch_now, 'S', 'E', ttrack, vrate, inclin, gs, 4)
                     elif poly_SW.contains(pos):
                         current_flight.set_guess(self.epoch_now, 'S', 'W', ttrack, vrate, inclin, gs, 4)

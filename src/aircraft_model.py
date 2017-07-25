@@ -3,10 +3,10 @@ from geo_resources import runway_ths_dict, all_wyp_seq, TMA
 from geopy.distance import great_circle
 from shapely.geometry import Point
 
-use_alt_ths_timestamp = False
+use_alt_ths_timestamp = True
 no_call = 'no_call'
 airport_altitude = 600  # [m]
-alt_threshold = airport_altitude + 800  # TODO make different alt thresholds for approach and take off
+alt_threshold = 914  # [m], 3000 ft  TODO make different alt thresholds for approach and take off
 missed_alt_threshold = 91  # [m] 300 [ft], altitude above runway to detect missed approach
 
 
@@ -125,6 +125,7 @@ class Aircraft:
 
 
 class Callsign:
+    # this is the key for a callsign dict in an aircraft
     def __init__(self, aircraft, call, epoch):
         self.aircraft = aircraft
         self.call = call
@@ -216,7 +217,6 @@ class Flight:
 
 
 class Operation:
-
     def __init__(self, flight):
         self.flight = flight
         self.op_guess_dict = {}
@@ -228,7 +228,7 @@ class Operation:
         self.LorT = None  # basically same as IorO but only after validation
         self.config = None
         self.guess_count = 0
-        self.min_pos_valid = 2
+        self.min_pos_valid = 3
         self.vrate_list = []
         self.inclin_list = []
         self.gs_list = []
@@ -241,7 +241,6 @@ class Operation:
         self.op_runway = ''
         self.op_comment = ''
         self.zone_change_comment = ''
-        self.miss_comment = ''
         self.missed_detected = None
         self.miss_inclin_ths = 1  # deg
         self.possible_miss_time = None
@@ -291,7 +290,6 @@ class Operation:
         # operation identified by this parameters
         runway = ''
         side = ''
-        event = ''
         if NorS == 'N':
             # UorD ~ D180 or U360
             if (180 - self.track_allow_landing <= track <= 180 + self.track_allow_landing) or bypass:
@@ -311,14 +309,14 @@ class Operation:
                             self.missed_detected = None
 
                 # handle possible missed approach
-                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
+                elif inclin >= self.miss_inclin_ths and zone < 3:
                     if not self.possible_miss_time:  # so later we get position from this moment
                         self.possible_miss_time = epoch
                     self.miss_guess_count += 1
                     if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
                         self.not_miss_guess_count = 0
-                if self.missed_detected and zone == 0:
+                if self.possible_miss_time and zone == 0:
                     position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
                     alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
                     # aircraft flying below 300 ft (91 m) at zone 0 (runway)
@@ -357,14 +355,14 @@ class Operation:
                             self.missed_detected = None
 
                 # handle possible missed approach
-                elif inclin >= self.miss_inclin_ths and 0 < zone < 3:
+                elif inclin >= self.miss_inclin_ths and zone < 3:
                     if not self.possible_miss_time:  # so later we get position from this moment
                         self.possible_miss_time = epoch
                     self.miss_guess_count += 1
                     if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
                         self.not_miss_guess_count = 0
-                if self.missed_detected and zone == 0:
+                if self.possible_miss_time and zone == 0:
                     position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
                     alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
                     # aircraft flying below 300 ft (91 m) at zone 0 (runway)
@@ -391,7 +389,7 @@ class Operation:
                 self.guess_count += 1
 
             if guess_str not in self.op_guess_dict.keys():
-                self.op_guess_dict[guess_str] = OpGuess(guess_str, NorS, EorW, UorD, event)
+                self.op_guess_dict[guess_str] = OpGuess(guess_str, NorS, EorW, UorD)
 
             self.op_guess_dict[guess_str].set_guess_zone(epoch, zone)
 
@@ -422,9 +420,9 @@ class Operation:
         delS4 = True
         south_weight = 0.0
         for op_guess in self.op_guess_dict.values():
+            if op_guess.all_zones_times <= self.min_pos_valid:
+                continue  # pass on weak guesses
             for zone_class in op_guess.zone_dict.values():
-                if zone_class.times <= self.min_pos_valid:
-                    continue  # pass on weak guesses
                 if op_guess.NorS == 'N':
                     if zone_class.zone < 4:  # dont weight for zone 4
                         north_weight += zone_class.times
@@ -460,29 +458,24 @@ class Operation:
             chosen_half_zones = south_zones
 
         if chosen_half_zones is not None:
-            for zone in chosen_half_zones:  # increasing zone 0 - 4
-                if zone is not None:  # Zone class
-                    guess_str = zone.guess_class.guess_str
+            for zone_class in chosen_half_zones:  # increasing zone 0 - 4
+                if zone_class is not None:  # Zone class
+                    guess_str = zone_class.guess_class.guess_str
                     # landing
-                    if zone.UorD == 'D':
-                        if zone.guess_class.is_miss and 0 < zone.zone < 3:
-                            self.op_runway = guess_str
-                        if zone.zone > 0 and self.op_runway:
+                    if zone_class.UorD == 'D':
+                        if zone_class.zone > 0 and self.op_runway:
                             if guess_str[0:2] == self.op_runway[0:2] and guess_str != self.op_runway:
                                 # next zone guess has same runway but not side (or event)
-                                self.zone_change_comment = '> ' + guess_str + ' @Z' + str(zone.zone)
+                                self.zone_change_comment = '< ' + guess_str + ' @Z' + str(zone_class.zone)
                                 break
-                        elif not self.op_runway and zone.zone < 4:
+                        elif not self.op_runway and zone_class.zone < 4:
                             self.op_runway = guess_str
                     # take off
-                    elif zone.UorD == 'U':
-                        if not zone.is_miss:  # take off
-                            if self.op_runway and guess_str not in self.op_runway:
-                                self.zone_change_comment = '> ' + guess_str + ' @Z' + str(zone.zone)
-                                break  # TODO don't stack up performances
-                            else:
-                                self.op_runway = guess_str
-                        elif zone.zone > 0:  # missed approach, but in zone 0 it gives trouble
+                    elif zone_class.UorD == 'U':
+                        if self.op_runway and guess_str not in self.op_runway:
+                            self.zone_change_comment = '> ' + guess_str + ' @Z' + str(zone_class.zone)
+                            break  # TODO don't stack up performances
+                        else:
                             self.op_runway = guess_str
 
             if self.op_runway:
@@ -502,6 +495,9 @@ class Operation:
         self.last_validation = epoch
         return self
 
+    def get_miss_comment(self):
+        return self.missed_detected.miss_comment if self.missed_detected else ''
+
     def get_op_rows(self):
         return [self.flight.callsign.call, self.flight.aircraft.icao, self.flight.aircraft.model,
                 (self.flight.aircraft.operator if len(self.flight.aircraft.operator) <= 8 else self.flight.aircraft.operator[0:8]),
@@ -510,7 +506,7 @@ class Operation:
                 '{:3.0f}'.format(self.get_mean_gs()),
                 '{:.1f}'.format(self.get_mean_inclin()), '{:3.0f}'.format(self.get_mean_track()), self.op_runway,
                 self.LorT,
-                self.zone_change_comment, self.miss_comment, self.op_comment, self.flight.sid_star]
+                self.zone_change_comment, self.get_miss_comment(), self.op_comment, self.flight.sid_star]
 
     def get_mean_vrate(self):
         return 0.0 if len(self.vrate_list) == 0 else reduce(lambda x, y: x + y, self.vrate_list) / len(self.vrate_list)
@@ -526,28 +522,28 @@ class Operation:
 
 
 class OpGuess:
-    def __init__(self, guess_str, NorS, EorW, UorD, event):
+    def __init__(self, guess_str, NorS, EorW, UorD):
         self.guess_str = guess_str
         self.NorS = NorS
         self.EorW = EorW
         self.UorD = UorD
 
-        self.is_miss = event != ''
         self.zone_dict = {}
+        self.all_zones_times = 0
         self.last_op_guess = None
 
     def set_guess_zone(self, epoch, zone):
         if zone not in self.zone_dict.keys():
-            self.zone_dict[zone] = ZoneTimes(zone, self, self.UorD, self.is_miss)
+            self.zone_dict[zone] = ZoneTimes(zone, self, self.UorD)
         self.zone_dict[zone].set_zone_guess(epoch)
+        self.all_zones_times += 1
 
 
 class ZoneTimes:
-    def __init__(self, zone, guess_class, UorD, is_miss):
+    def __init__(self, zone, guess_class, UorD):
         self.zone = zone
         self.guess_class = guess_class
         self.UorD = UorD
-        self.is_miss = is_miss
         self.last_op_guess = None
         self.times = 0
         self.unweighted_times = 0
@@ -574,7 +570,6 @@ class Position:
 
 
 class Velocity:
-
     def __init__(self, epoch, vrate, gs, ttrack):
         self.vrate = vrate
         self.gs = gs
@@ -586,7 +581,7 @@ class MissedApproach:
     def __init__(self, operation, epoch, missed_time):
         self.operation = operation
         self.operation.validate_operation(epoch)
-        self.timestamp = missed_time
+        self.timestamp = missed_time if missed_time else epoch
         self.runway = self.operation.op_runway
         self.position = self.operation.flight.aircraft.get_position_delimited(self.timestamp, 0, 20)
         self.alt = self.position.alt - self.operation.flight.aircraft.get_current_diff(epoch)
@@ -596,6 +591,5 @@ class MissedApproach:
                 self.dist_to_ths = great_circle((self.position.lon, self.position.lat),
                                                 (runway_ths_dict[runway_ths_key].x, runway_ths_dict[runway_ths_key].y)).nautical
                 break
-        self.operation.miss_comment = '(missed @ ' + datetime_string(self.timestamp) + ', ' + '{:1.0f}'.format(self.alt / 0.3048) + ' ft, ' +\
+        self.miss_comment = '(missed @ ' + datetime_string(self.timestamp) + ', ' + '{:1.0f}'.format(self.alt / 0.3048) + ' ft, ' +\
                                       '{:1.2f}'.format(self.dist_to_ths) + ' nm from ths) '
-
