@@ -9,18 +9,13 @@ class FlightsLog:
     def __init__(self, final_op_list):
         self.final_op_list = final_op_list
 
-    def write(self, path, name,):
+    def write(self, path, name):
         log_file_name = '%s\\%s_flightsLog.txt' % (path, name)
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-<<<<<<< HEAD
             guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\tinclin(deg)\t"\
             "track(deg)\trunway\tchange_comment\tmiss_comment\top_comment\tSID/STAR\twaypoints\n")
-=======
-            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\t(deg)\t"\
-            "track\trunway\tchange_comment\tmiss_comment\top_comment\tSID/STAR\twaypoints\n")
->>>>>>> parent of e457a07... trying to fix deletion of apparently misses...
             for operation in self.final_op_list:
                 date = datetime_string(operation.get_op_timestamp())
                 hour = time.gmtime(operation.get_op_timestamp()).tm_hour
@@ -33,8 +28,9 @@ class FlightsLog:
                                           ('{:.0f}'.format(operation.get_op_timestamp()) if operation.get_op_timestamp() else 'None'),
                                           date, '{:1}'.format(operation.guess_count),'{:+05.0f}'.format(operation.get_mean_vrate()),
                                            '{:05.1f}'.format(operation.get_mean_gs()), '{:+04.1f}'.format(operation.get_mean_inclin()),
-                                          '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway, operation.zone_change_comment,
-                                          operation.miss_comment, operation.op_comment, operation.flight.sid_star, ', '.join(operation.flight.waypoints)))
+                                          '{:03.0f}'.format(operation.get_mean_track()), operation.op_runway,
+                                          operation.zone_change_comment, operation.get_miss_comment(),
+                                          operation.op_comment, operation.flight.sid_star, ', '.join(operation.flight.waypoints)))
                 except Exception:
                     print 'Error in logging!!'
                     guess_log_file.write('Error with logging ' + '{:6}'.format(operation.flight.aircraft.icao) + '\n')
