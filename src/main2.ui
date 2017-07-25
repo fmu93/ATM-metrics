@@ -960,6 +960,9 @@
              <property name="focusPolicy">
               <enum>Qt::ClickFocus</enum>
              </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustToContents</enum>
+             </property>
              <property name="readOnly">
               <bool>true</bool>
              </property>

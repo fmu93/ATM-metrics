@@ -14,7 +14,7 @@ class FlightsLog:
         prev_hour = 24
 
         with open(log_file_name, 'w') as guess_log_file:
-            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\t(deg)\t"\
+            guess_log_file.write("call    \ticao  \ttype\topTimestamp\topTimestampDate \tguess_count\tV(fpm)\tGS(kts)\tinclin(deg)\t"\
             "track(deg)\trunway\tchange_comment\tmiss_comment\top_comment\tSID/STAR\twaypoints\n")
             for operation in self.final_op_list:
                 date = datetime_string(operation.get_op_timestamp())
