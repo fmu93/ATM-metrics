@@ -8,8 +8,12 @@ from p_tools import sortedDictKeys, get_file_name
 from Queue import Queue
 
 no_call = 'no_call'
+miss_event = 'missed? '
 airport_altitude = 600  # [m]
 guess_alt_ths = 1800  # [m] above airport to discard flyovers
+
+# output parameters
+out_name = 'runway_allocation_'
 
 
 class DataExtractorThread(threading.Thread):
@@ -20,6 +24,7 @@ class DataExtractorThread(threading.Thread):
         self.infiles = infiles
         self.infiles_dict = {}
         self.core = core
+        self.files_data_dict = {}
         self.call_icao_list = []  # collect all calls+icao and validate those which appear more than once
         self.extract_data = extract_data.Metrics(self)
         self.num_lines = 0
@@ -47,7 +52,6 @@ class DataExtractorThread(threading.Thread):
                     self.num_lines += sum(1.0 for line in database)
                 except:
                     print 'Error in file: ' + infile.name
-                    self.core.controller.print_console('Error in file: ' + infile.name)
 
         for timestamp in sortedDictKeys(self.infiles_dict):
             # display name of current database running
@@ -57,9 +61,9 @@ class DataExtractorThread(threading.Thread):
             self.core.controller.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
                                                get_file_name(self.infiles_dict[timestamp])))
-            # icao_filter = '343147'
+            # icao_filter = '4ca981'
             icao_filter = None
-            self.core.files_data_dict[timestamp] = {}  # icao_dict
+            self.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
             # validate when finished with each file
@@ -83,8 +87,7 @@ class OperationRefreshThread(threading.Thread):
         self.core = core
         self.dataExtractor = dataExtractor
         self.paused = False
-        self.lock1 = threading.Lock()
-        self.lock2 = threading.Lock()
+        self.lock = threading.Lock()
 
     def setInterval(self, interval):
         """Set the number of seconds we sleep between executing our task"""
@@ -101,16 +104,16 @@ class OperationRefreshThread(threading.Thread):
             self.task()
             # finish if just wanted to run once and write analysis
             if not self.live_run:
-                self.core.write_analysis(False)
+                self.core.write_analysis()
                 return
             # sleep for interval or until shutdown
             self._finished.wait(self.core.refreshRate)
 
     def task(self):
         if not self.paused:
-            with self.lock1:
+            with self.lock:
                 """The task done by this thread - override in subclasses"""
-                for icao_dict in self.core.files_data_dict.values():
+                for icao_dict in self.dataExtractor.files_data_dict.values():
                     for aircraft in icao_dict.values():
                         for flight in aircraft.flights_dict.values():
                             if len(flight.operations) > 0 and \
@@ -127,23 +130,25 @@ class OperationRefreshThread(threading.Thread):
 
     def display(self):
         op_list = []
-        with self.lock2:
-            for op in (self.core.operation_dict.values()):
-                if (not self.core.model_filter or (op.flight.aircraft.model in self.core.model_filter)) and\
-                    (not self.core.airline_filter or (op.flight.aircraft.operator in self.core.airline_filter)) and\
-                        (not self.core.config_filter or (op.config in self.core.config_filter)) and\
-                        (not self.core.start_filter or (op.get_op_timestamp() >= self.core.start_filter)) and\
-                        (not self.core.end_filter or (op.get_op_timestamp() <= self.core.end_filter)):
+        for op in (self.core.operation_dict.values()):
+            if (not self.core.model_filter or (op.flight.aircraft.model in self.core.model_filter)) and\
+                (not self.core.airline_filter or (op.flight.aircraft.operator in self.core.airline_filter)) and\
+                    (not self.core.config_filter or (op.config in self.core.config_filter)) and\
+                    (not self.core.start_filter or (op.get_op_timestamp() >= self.core.start_filter)) and\
+                    (not self.core.end_filter or (op.get_op_timestamp() <= self.core.end_filter)):
 
-                    op_list.append(op)
+                op_list.append(op)
 
-            if len(op_list) > -1:
-                op_list.sort()
-                config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
-                self.core.controller.update_tableConfig(config_list)
-                self.core.controller.update_tableFlights(op_list, self.dataExtractor.extract_data.epoch_now)
+        if len(op_list) > -1:
+            op_list.sort()
+            config_list = analysis.ConfigLog(op_list).run()  # TODO make efficient analysis for 'only new'
+            self.core.controller.update_tableConfig(config_list)
+            # small efficiency trick
+            self.core.controller.update_tableFlights(
+                op_list[0:self.core.operations_table_rows] if len(op_list) > self.core.operations_table_rows else op_list,
+                self.dataExtractor.extract_data.epoch_now)
 
-                self.core.controller.update_histo(op_list, config_list)
+            self.core.controller.histo.update_figure(op_list, config_list)
 
 
 class Core:  # TODO does this have to be a class??
@@ -173,7 +178,6 @@ class Core:  # TODO does this have to be a class??
         self.start_filter = None
         self.end_filter = None
         # results
-        self.files_data_dict = {}
         self.operation_dict = {}
         self.first_file_name = ''
         # out files
@@ -190,7 +194,6 @@ class Core:  # TODO does this have to be a class??
         self.start_analysis()
 
     def start_analysis(self):
-        self.files_data_dict = {}
         self.operation_dict = {}
         self.controller.disable_run(True)
         self.controller.disable_stop_pause(False)
@@ -201,7 +204,8 @@ class Core:  # TODO does this have to be a class??
             if self.is_live_run:
                 self.validate(self.is_live_run)
             self.controller.setHap('Running')
-            self.controller.update_progressbar(0)
+            with self.lock2:
+                self.controller.update_progressbar(0)
 
     def validate(self, live_run):
         self.operationRefresh = OperationRefreshThread(self.dataExtractor, self, live_run)
@@ -254,21 +258,22 @@ class Core:  # TODO does this have to be a class??
         if self.operationRefresh:
             self.operationRefresh.display()
 
-    def write_analysis(self, validate):
-        if validate:
+    def write_analysis(self):
+        if not self.operationRefresh:
             self.validate(False)
-        with self.lock1:
-            if self.out_name:
-                out_name = self.out_name
-            else:
-                out_name = os.path.splitext(os.path.basename(self.first_file_name))[0]
+        else:
+            with self.lock1:
+                if self.out_name:
+                    out_name = self.out_name
+                else:
+                    out_name = os.path.splitext(os.path.basename(self.first_file_name))[0]
 
-            op_list = [op for op in self.operation_dict.values()]
-            op_list.sort()
-            analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
-            analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
-        print 'logs saved'
-        self.controller.print_console('logs saved')
+                op_list = [op for op in self.operation_dict.values()]
+                op_list.sort()
+                analysis.FlightsLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
+                analysis.ConfigLog(op_list).write(os.path.dirname(self.first_file_name), out_name)
+            print 'logs saved'
+            self.controller.print_console('logs saved')
 
 # core Class
 coreClass = Core()

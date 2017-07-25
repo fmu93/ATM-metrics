@@ -42,7 +42,7 @@ class Controller:
         # connections
         self.ui.btnOpen.clicked.connect(self.openFileNamesDialog)
         self.ui.btnRun.clicked.connect(self.core.run)
-        self.ui.btnWrite.clicked.connect(self.write_analysis)
+        self.ui.btnWrite.clicked.connect(self.core.write_analysis)
         self.ui.btnStop.clicked.connect(self.core.stop)
         self.ui.btnPause.clicked.connect(self.core.pause)
         self.ui.btnLiveRun.clicked.connect(self.core.live_run)
@@ -110,8 +110,6 @@ class Controller:
         op_list.sort(reverse=True)
         self.ui.tableFlights.clearContents()
         for m, op in enumerate(op_list):
-            if m == self.ui.tableFlights.rowCount():
-                self.ui.tableFlights.setRowCount(m+1)
             for n, item in enumerate(op.get_op_rows()):
                 newItem = QtWidgets.QTableWidgetItem(item)
                 color = None
@@ -182,7 +180,7 @@ class Controller:
         self.print_console("process state label changed: " + string)
 
     def update_progressbar(self, val):
-        self.ui.progressBar.setValue(val)  # TODO run gui only from main thread!!
+        self.ui.progressBar.setValue(val)  # TODO run gui only from main thread
         # if isinstance(threading.current_thread(), threading._MainThread):
         #     self.ui.progressBar.setValue(val)
         # else:
@@ -192,11 +190,8 @@ class Controller:
         self.core.is_delimited = bool(checked)
         self.print_console('delimited analysis: ' + str(bool(checked)))
 
-    def update_histo(self, op_list, config_list):
-        try:
-            self.histo.update_figure(op_list, config_list)
-        except:
-            self.print_console("[!] Error with plotting histogram...")
+    def update_histo(self):
+        self.histo.update_figure()
 
     def state_stacked(self, checked):
         self.ui.matplotlibWidget.stacked = bool(checked)
@@ -229,9 +224,6 @@ class Controller:
     def print_console(self, new_text):
         self.core.console_text += new_text + '\n'
         self.ui.console.setPlainText(self.core.console_text)
-
-    def write_analysis(self):
-        self.core.write_analysis(True)
 
     def handleAltThs(self):
         if self.ui.lineEdit_alt_ths.isModified():
@@ -304,7 +296,7 @@ class Controller:
 
     def handle_refreshRate(self):
         self.core.refreshRate = int(self.ui.spinBoxRate.value())
-        self.print_console("refresh rate for live run set to: " + str(self.ui.spinBoxRate.value()) + " seconds")
+        self.print_console("refresh rate for live run set to: " + str(self.ui.spinBoxRate.value()))
 
 
 class MatplotlibWidget(QtWidgets.QWidget):
@@ -396,6 +388,7 @@ class MatplotlibWidget(QtWidgets.QWidget):
                     dep[index] += 1
                 elif op.LorT == 'L':
                     arr[index] += 1
+            print index, len(labels)
 
             N = len(labels)
             self.bins = np.arange(N)
@@ -403,8 +396,7 @@ class MatplotlibWidget(QtWidgets.QWidget):
             # plot stacked bars
             p1 = self.axes.bar(self.bins, arr, width, color='#9CB380')
             p2 = self.axes.bar(self.bins, dep, width, bottom=arr, color='#5CC8FF')
-            # set legend and labels (not always so they don't overlap)
-            self.axes.legend((p2[0], p1[0]), ('Dep', 'Arr'), loc=0)
+            # set labels and legend
             self.axes.set_xticks(self.bins - 0.5)
             if len(labels) > 10:
                 i = 0
@@ -414,11 +406,12 @@ class MatplotlibWidget(QtWidgets.QWidget):
                         labels[m] = ''
                     i += 1
                     if i > one_label_per: i = 0
-            self.axes.set_xticklabels(labels, rotation=-40)
+            self.axes.set_xticklabels(labels, rotation=-40)  # TODO make blanks when N is greater than.. 10
+            self.axes.legend((p2[0], p1[0]), ('Dep', 'Arr'), loc=0)
             self.max_y = self.axes.get_ylim()[1]
             self.axes.set_xlim(-1, N)
             x_offset = 0.2
-            # set text for count of each bar
+            # set text
             if self.show_labels:
                 for m, label in enumerate(labels):
                     if arr[m] != 0:
@@ -427,7 +420,7 @@ class MatplotlibWidget(QtWidgets.QWidget):
                     if dep[m] != 0:
                         self.axes.text(self.bins[m] + x_offset/2,
                                        dep[m] + arr[m] + self.max_y*0.01, '{:.0f}'.format(dep[m]))
-            # config change vertical lines and text
+            # config changes vertical lines
             for m, config in enumerate(config_list):
                 x = float((config.from_epoch - self.first_timestamp) / self.binsize)
                 self.axes.plot([x]*2, [0, 0.9*self.max_y], 'b--', linewidth=1)
