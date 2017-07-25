@@ -83,14 +83,14 @@ class Aircraft:
             pos = self.get_position_delimited(epoch, 0, 20)
             # below FL 80 = 2438 m and around airport
             if pos and pos.alt < 2438 and TMA.contains(Point(pos.lon, pos.lat)):
-                Aircraft.generic_current_diff = float(30 * (1013 - kolls))
+                Aircraft.generic_current_diff = float(9.144 * (1013 - kolls))
                 Aircraft.last_generic_diff = epoch
                 # TODO save kollsman history and display
 
     def get_current_diff(self, epoch):
         # return generic_current_diff if last time of self koll was longer than 30 min ago
         if self.current_kolls and epoch - self.last_kolls < 1800:
-            return float(30 * (1013 - self.current_kolls))
+            return float(9.144 * (1013 - self.current_kolls))
         else:
             return Aircraft.generic_current_diff
 
@@ -229,7 +229,7 @@ class Operation:
         self.LorT = None  # basically same as IorO but only after validation
         self.config = None
         self.guess_count = 0
-        self.min_pos_valid = 3
+        self.min_pos_valid = 2
         self.vrate_list = []
         self.inclin_list = []
         self.gs_list = []
@@ -307,7 +307,6 @@ class Operation:
                             self.miss_guess_count = 0
                             self.possible_miss_time = None
                             self.missed_detected = None
-
                 # handle possible missed approach
                 elif inclin >= self.miss_inclin_ths and zone < 3:
                     if not self.possible_miss_time:  # so later we get position from this moment
@@ -316,16 +315,17 @@ class Operation:
                     if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
                         self.not_miss_guess_count = 0
-                if self.possible_miss_time and zone == 0:
-                    position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
-                    alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
-                    # aircraft flying below 300 ft (91 m) at zone 0 (runway)
-                    if alt > airport_altitude + Operation.missed_alt_threshold and not self.missed_detected:
-                        self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
-                    else:
-                        self.miss_guess_count = 0
-                        self.possible_miss_time = None
-                        self.missed_detected = None
+                # TODO more explained below in another TODO
+                # if self.possible_miss_time and zone == 0:
+                #     position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
+                #     alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
+                #     # aircraft flying below 300 ft (91 m) at zone 0 (runway)
+                #     if alt > airport_altitude + Operation.missed_alt_threshold and not self.missed_detected:
+                #         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+                #     else:
+                #         self.miss_guess_count = 0
+                #         self.possible_miss_time = None
+                #         self.missed_detected = None
 
             elif (360 - self.track_allow_takeoff <= track <= 360 or 0 <= track <= 0 + self.track_allow_takeoff)\
                     and not bypass:
@@ -362,15 +362,17 @@ class Operation:
                     if not self.missed_detected and self.miss_guess_count > self.miss_guess_min:
                         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
                         self.not_miss_guess_count = 0
-                if self.possible_miss_time and zone == 0:
-                    position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
-                    alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
-                    # aircraft flying below 300 ft (91 m) at zone 0 (runway)
-                    if alt > airport_altitude + Operation.missed_alt_threshold and not self.missed_detected:
-                        self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
-                    else:
-                        self.miss_guess_count = 0
-                        self.missed_detected = None
+                # TODO (commented lines below) - when an operation is first thought to be a miss but then it's not,
+                # TODO - self.missed_detected = None, it won't show up at all. check the case for ICAO 343147 in file digest_20160815dump1090.hex with operation at about 11:18:59
+                # if self.possible_miss_time and zone == 0:
+                #     position = self.flight.aircraft.get_position_delimited(epoch, 0, 20)
+                #     alt = position.alt - self.flight.aircraft.get_current_diff(epoch)
+                #     # aircraft flying below 300 ft (91 m) at zone 0 (runway)
+                #     if alt > airport_altitude + Operation.missed_alt_threshold and not self.missed_detected:
+                #         self.missed_detected = MissedApproach(self, epoch, self.possible_miss_time)
+                #     else:
+                #         self.miss_guess_count = 0
+                #         self.missed_detected = None
 
             elif (140 - self.track_allow_takeoff <= track <= 140 + self.track_allow_takeoff) and not bypass:
                 self.IorO = 'O'
@@ -392,8 +394,6 @@ class Operation:
                 self.op_guess_dict[guess_str] = OpGuess(guess_str, NorS, EorW, UorD)
 
             self.op_guess_dict[guess_str].set_guess_zone(epoch, zone)
-
-        return self.get_op_timestamp()
 
     def set_runway_ths_timestamp(self, epoch, zone, UorD):
         #  Out/takeoff, keep first -> only save first time

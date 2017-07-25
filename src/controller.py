@@ -24,6 +24,16 @@ class Controller:
         self.ui = ui
         self.core.set_controller(self)
         self.lock1 = threading.Lock()
+        self.lock2 = threading.Lock()
+        self.lock3 = threading.Lock()
+        self.lock4 = threading.Lock()
+        self.lock5 = threading.Lock()
+        self.lock6 = threading.Lock()
+        self.lock7 = threading.Lock()
+
+        # set up
+        self.disable_run(True)
+        self.disable_stop_pause(True)
 
         # table
         self.ui.tableFlights.setColumnCount(17)
@@ -162,33 +172,32 @@ class Controller:
         self.ui.tableConfig.resizeColumnsToContents()
 
     def disable_run(self, bool):
-        self.ui.btnRun.setDisabled(bool)
-        self.ui.btnLiveRun.setDisabled(bool)
+        with self.lock5:
+            self.ui.btnRun.setDisabled(bool)
+            self.ui.btnLiveRun.setDisabled(bool)
 
     def disable_stop_pause(self, bool):
-        self.ui.btnPause.setDisabled(bool)
-        self.ui.btnStop.setDisabled(bool)
-
-    def disable_for_light(self, bool):
-        self.ui.tabWidget.setDisabled(bool)
+        with self.lock7:
+            self.ui.btnPause.setDisabled(bool)
+            self.ui.btnStop.setDisabled(bool)
 
     def setClock(self, timeStr):
-        self.ui.lblTime.setText(timeStr)
+        with self.lock6:
+            self.ui.lblTime.setText(timeStr)
 
     def setCurrent(self, string):
-        self.ui.lblCurrent.setText(string)
+        with self.lock3:
+            self.ui.lblCurrent.setText(string)
         self.print_console("current file label changed: " + string)
 
     def setHap(self, string):
-        self.ui.lblHap.setText(string)
+        with self.lock2:
+            self.ui.lblHap.setText(string)
         self.print_console("process state label changed: " + string)
 
     def update_progressbar(self, val):
-        self.ui.progressBar.setValue(val)  # TODO run gui only from main thread!!
-        # if isinstance(threading.current_thread(), threading._MainThread):
-        #     self.ui.progressBar.setValue(val)
-        # else:
-        #     self.core.q.put((self.update_progressbar, (val,), {}))  # send the answer to the main thread's queue
+        with self.lock4:
+            self.ui.progressBar.setValue(val)
 
     def delimited_analysis(self, checked):
         self.core.is_delimited = bool(checked)

@@ -5,7 +5,6 @@ import main_gui
 import threading
 import analysis
 from p_tools import sortedDictKeys, get_file_name
-from Queue import Queue
 
 
 class DataExtractorThread(threading.Thread):
@@ -22,6 +21,7 @@ class DataExtractorThread(threading.Thread):
         self.file_count = 1
         self.forced_exit = False
         self.paused = False
+        self.lock1 = threading.Lock()
 
     def shutdown(self):
         """Stop this thread"""
@@ -53,8 +53,8 @@ class DataExtractorThread(threading.Thread):
             self.core.controller.setCurrent('File %d/%d: %s'
                                             % (self.file_count, len(self.infiles_dict),
                                                get_file_name(self.infiles_dict[timestamp])))
-            icao_filter = '343147'
-            # icao_filter = None
+            # icao_filter = '343147'
+            icao_filter = None
             self.core.files_data_dict[timestamp] = {}  # icao_dict
             self.extract_data.run(timestamp, self.infiles_dict[timestamp], icao_filter)
             self.file_count += 1
@@ -155,8 +155,9 @@ class Core:  # TODO does this have to be a class??
         self.refreshRate = 5
         self.lock1 = threading.Lock()
         self.lock2 = threading.Lock()
-        # queue to run functions from main thread TODO...
-        self.q = Queue()
+        self.lock3 = threading.Lock()
+        self.lock4 = threading.Lock()
+        self.lock5 = threading.Lock()
         # start/end times
         self.is_delimited = False
         self.analyseStart = None
@@ -186,18 +187,19 @@ class Core:  # TODO does this have to be a class??
         self.start_analysis()
 
     def start_analysis(self):
-        self.files_data_dict = {}
-        self.operation_dict = {}
-        self.controller.disable_run(True)
-        self.controller.disable_stop_pause(False)
-        if self.infiles and not self.dataExtractor:
-            self.dataExtractor = DataExtractorThread(self.infiles, self)
-            dataExtractorThread = threading.Thread(target=self.dataExtractor.run, name='dataExtractor', args=())
-            dataExtractorThread.start()
-            if self.is_live_run:
-                self.validate(self.is_live_run)
-            self.controller.setHap('Running')
-            self.controller.update_progressbar(0)
+        with self.lock3:
+            self.files_data_dict = {}
+            self.operation_dict = {}
+            self.controller.disable_run(True)
+            self.controller.disable_stop_pause(False)
+            if self.infiles and not self.dataExtractor:
+                self.dataExtractor = DataExtractorThread(self.infiles, self)
+                dataExtractorThread = threading.Thread(target=self.dataExtractor.run, name='dataExtractor', args=())
+                dataExtractorThread.start()
+                if self.is_live_run:
+                    self.validate(self.is_live_run)
+                self.controller.setHap('Running')
+                self.controller.update_progressbar(0)
 
     def validate(self, live_run):
         self.operationRefresh = OperationRefreshThread(self.dataExtractor, self, live_run)
@@ -205,19 +207,20 @@ class Core:  # TODO does this have to be a class??
         operationRefreshThread.start()
 
     def stop(self):
-        try:
-            self.dataExtractor.shutdown()
-            self.dataExtractor = None
-            self.controller.setHap('Data extraction terminated')
-            if self.operationRefresh:
-                self.operationRefresh.shutdown()
-                self.operationRefresh = None
-                self.controller.setHap('Threads killed!')
-            self.controller.update_progressbar(0)
-        except Exception:
-            print 'Can\'t kill threads'
-            self.controller.setHap('Can\'t kill threads')
-        self.controller.disable_run(False)
+        with self.lock4:
+            try:
+                self.dataExtractor.shutdown()
+                self.dataExtractor = None
+                self.controller.setHap('Data extraction terminated')
+                if self.operationRefresh:
+                    self.operationRefresh.shutdown()
+                    self.operationRefresh = None
+                    self.controller.setHap('Threads killed!')
+                self.controller.update_progressbar(0)
+            except Exception:
+                print 'Can\'t kill threads'
+                self.controller.setHap('Can\'t kill threads')
+            self.controller.disable_run(False)
 
     def pause(self):
         if self.dataExtractor.paused:
@@ -234,17 +237,16 @@ class Core:  # TODO does this have to be a class??
             self.controller.ui.btnPause.setText('Resume')
 
     def done(self):
-        self.dataExtractor.shutdown()
-        self.operationRefresh.shutdown()
-        self.dataExtractor = None
-        self.controller.setHap('Done')
-        # self.controller.update_progressbar(100)  # TODO if set to 100 the program will hang!!!!
-        self.controller.disable_run(False)
+        with self.lock5:
+            self.dataExtractor.shutdown()
+            self.operationRefresh.shutdown()
+            self.dataExtractor = None
+            self.controller.setHap('Done')
+            # self.controller.update_progressbar(100)  # TODO if set to 100 the program will hang!!!!
+            self.controller.disable_run(False)
 
     def set_controller(self, controller):
         self.controller = controller
-        self.controller.disable_run(True)
-        self.controller.disable_stop_pause(True)
 
     def make_display(self):
         if self.operationRefresh:
